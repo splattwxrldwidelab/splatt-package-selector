@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Creator Packages</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background:
+        radial-gradient(circle at 50% 0%, rgba(57,255,20,.10), transparent 35%),
+        #050505;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    min-height: 100vh;
+}
+
+/* ELECTRIC BACKGROUND */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .22;
+
+    background-image:
+        radial-gradient(circle at 15% 25%, #39ff14 0 1px, transparent 2px),
+        radial-gradient(circle at 80% 35%, #39ff14 0 1px, transparent 2px),
+        radial-gradient(circle at 35% 75%, #ff2db2 0 1px, transparent 2px);
+
+    background-size: 85px 85px, 120px 120px, 150px 150px;
+}
+
+.wrapper {
+    max-width: 1150px;
+    margin: auto;
+    padding: 45px 20px 55px;
+}
+
+.heading {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.heading h1 {
+    margin: 0;
+    font-size: clamp(34px, 6vw, 70px);
+    font-weight: 1000;
+    letter-spacing: 2px;
+    color: #ff2db2;
+
+    text-shadow:
+        0 0 8px #ff2db2,
+        0 0 18px rgba(255,45,178,.55);
+}
+
+.heading p {
+    margin-top: 12px;
+    color: #d8d8d8;
+    font-size: 17px;
+}
+
+/* PACKAGE GRID */
+
+.packages {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+}
+
+/* CARD */
+
+.package {
+    position: relative;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,45,178,.12),
+            rgba(0,0,0,.95)
+        );
+
+    border: 3px solid #ff2db2;
+    border-radius: 18px;
+
+    padding: 30px 22px;
+
+    cursor: pointer;
+
+    min-height: 420px;
+
+    display: flex;
+    flex-direction: column;
+
+    transition:
+        background .22s ease,
+        border-color .22s ease,
+        transform .22s ease,
+        box-shadow .22s ease;
+}
+
+/* GREEN STATIC EDGE */
+
+.package::before {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: 21px;
+
+    border: 1px solid rgba(57,255,20,.30);
+
+    opacity: .35;
+    pointer-events: none;
+
+    box-shadow:
+        0 0 8px rgba(57,255,20,.25),
+        0 0 18px rgba(57,255,20,.15);
+}
+
+/* HOVER */
+
+.package:hover,
+.package.selected {
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(57,255,20,.24),
+            rgba(0,0,0,.96)
+        );
+
+    border-color: #39ff14;
+
+    transform: translateY(-7px);
+
+    box-shadow:
+        0 0 10px #39ff14,
+        0 0 25px rgba(57,255,20,.75),
+        0 0 45px rgba(57,255,20,.32);
+}
+
+.package:hover::before,
+.package.selected::before {
+    opacity: 1;
+
+    box-shadow:
+        0 0 8px #39ff14,
+        0 0 18px #39ff14,
+        0 0 35px rgba(57,255,20,.70);
+}
+
+/* TITLES */
+
+.package-name {
+    color: #39ff14;
+    font-weight: 900;
+    text-align: center;
+    font-size: 21px;
+    letter-spacing: 1px;
+    min-height: 52px;
+}
+
+.price {
+    text-align: center;
+    color: #ff2db2;
+
+    font-size: 52px;
+    font-weight: 1000;
+
+    margin: 8px 0 22px;
+
+    text-shadow:
+        0 0 8px rgba(255,45,178,.65);
+}
+
+/* When hovered */
+
+.package:hover .package-name,
+.package.selected .package-name {
+    color: #ff2db2;
+}
+
+.package:hover .price,
+.package.selected .price {
+    color: #ff2db2;
+
+    text-shadow:
+        0 0 10px #ff2db2,
+        0 0 22px rgba(255,45,178,.75);
+}
+
+/* FEATURES */
+
+.features {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1;
+}
+
+.features li {
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+    font-size: 15px;
+}
+
+.features li::before {
+    content: "✓";
+    color: #39ff14;
+    font-weight: bold;
+    margin-right: 8px;
+}
+
+/* RECOMMENDED CARD */
+
+.recommended {
+    border-color: #39ff14;
+
+    box-shadow:
+        0 0 10px rgba(57,255,20,.45),
+        0 0 25px rgba(57,255,20,.18);
+}
+
+.badge {
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    background: #39ff14;
+    color: #050505;
+
+    padding: 7px 15px;
+
+    border-radius: 30px;
+
+    font-size: 12px;
+    font-weight: 1000;
+
+    white-space: nowrap;
+
+    box-shadow:
+        0 0 10px rgba(57,255,20,.75);
+}
+
+/* SELECT BUTTON */
+
+.select-button {
+    margin-top: 24px;
+
+    border: 2px solid #39ff14;
+    border-radius: 10px;
+
+    background: #ff2db2;
+
+    color: #39ff14;
+
+    font-weight: 1000;
+    font-size: 15px;
+
+    padding: 14px 10px;
+
+    text-align: center;
+
+    transition: .2s ease;
+}
+
+.package:hover .select-button,
+.package.selected .select-button {
+
+    background: #39ff14;
+
+    color: #ff2db2;
+
+    border-color: #ff2db2;
+
+    box-shadow:
+        0 0 8px #39ff14,
+        0 0 20px rgba(57,255,20,.75);
+}
+
+/* CONTINUE AREA */
+
+.continue-area {
+    display: none;
+    text-align: center;
+    margin-top: 35px;
+}
+
+.continue-area.visible {
+    display: block;
+}
+
+.selection-text {
+    margin-bottom: 15px;
+    color: white;
+    font-weight: bold;
+}
+
+.continue-button {
+
+    display: inline-block;
+
+    background: #ff2db2;
+    color: #39ff14;
+
+    border: 2px solid #39ff14;
+
+    padding: 16px 35px;
+
+    border-radius: 12px;
+
+    font-size: 17px;
+    font-weight: 1000;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 0 15px rgba(57,255,20,.40);
+
+    transition: .2s ease;
+}
+
+.continue-button:hover {
+
+    background: #39ff14;
+    color: #ff2db2;
+
+    border-color: #ff2db2;
+
+    box-shadow:
+        0 0 10px #39ff14,
+        0 0 28px #39ff14;
+}
+
+/* MOBILE */
+
+@media (max-width: 800px) {
+
+    .packages {
+        grid-template-columns: 1fr;
+    }
+
+    .package {
+        min-height: auto;
+    }
+
+    .wrapper {
+        padding-top: 30px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="wrapper">
+
+    <div class="heading">
+
+        <h1>CREATOR PACKAGES</h1>
+
+        <p>
+            Choose the branding package that fits your content.
+        </p>
+
+    </div>
+
+
+    <div class="packages">
+
+
+        <!-- ENTRY LEVEL -->
+
+        <div
+            class="package"
+            data-package="Entry Level"
+            data-price="150"
+        >
+
+            <div class="package-name">
+                ENTRY LEVEL
+            </div>
+
+            <div class="price">
+                $150
+            </div>
+
+            <ul class="features">
+
+                <li>2 Standard Name Watermark Options</li>
+
+                <li>3 Custom Emojis</li>
+
+                <li>FREE Green W Emoji</li>
+
+                <li>FREE Red L Emoji</li>
+
+                <li>Kick-ready formatting</li>
+
+            </ul>
+
+            <div class="select-button">
+                SELECT PACKAGE
+            </div>
+
+        </div>
+
+
+        <!-- MEDIUM -->
+
+        <div
+            class="package"
+            data-package="Medium Influencer"
+            data-price="180"
+        >
+
+            <div class="package-name">
+                MEDIUM INFLUENCER
+            </div>
+
+            <div class="price">
+                $180
+            </div>
+
+            <ul class="features">
+
+                <li>4 Custom Watermark Options</li>
+
+                <li>6 Custom Emojis</li>
+
+                <li>1 Custom Banner</li>
+
+                <li>FREE Green W Emoji</li>
+
+                <li>FREE Red L Emoji</li>
+
+                <li>Kick-ready formatting</li>
+
+            </ul>
+
+            <div class="select-button">
+                SELECT PACKAGE
+            </div>
+
+        </div>
+
+
+        <!-- CONTENT CREATOR -->
+
+        <div
+            class="package recommended"
+            data-package="Content Creator"
+            data-price="220"
+        >
+
+            <div class="badge">
+                RECOMMENDED • VALUE PACK
+            </div>
+
+            <div class="package-name">
+                CONTENT CREATOR
+            </div>
+
+            <div class="price">
+                $220
+            </div>
+
+            <ul class="features">
+
+                <li>8 Custom Watermark Options</li>
+
+                <li>10 Custom Emojis</li>
+
+                <li>1 Custom Banner</li>
+
+                <li>1 Offline Banner</li>
+
+                <li>FREE Green W Emoji</li>
+
+                <li>FREE Red L Emoji</li>
+
+                <li>Kick-ready formatting</li>
+
+            </ul>
+
+            <div class="select-button">
+                SELECT PACKAGE
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <div
+        class="continue-area"
+        id="continueArea"
+    >
+
+        <div
+            class="selection-text"
+            id="selectionText"
+        ></div>
+
+        <button
+            class="continue-button"
+            id="continueButton"
+        >
+            CONTINUE TO DESIGN QUESTIONNAIRE →
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const packages =
+    document.querySelectorAll(".package");
+
+const continueArea =
+    document.getElementById("continueArea");
+
+const selectionText =
+    document.getElementById("selectionText");
+
+const continueButton =
+    document.getElementById("continueButton");
+
+let selectedPackage = null;
+
+
+packages.forEach(card => {
+
+    card.addEventListener("click", () => {
+
+        packages.forEach(item =>
+            item.classList.remove("selected")
+        );
+
+        card.classList.add("selected");
+
+        selectedPackage = {
+            name: card.dataset.package,
+            price: card.dataset.price
+        };
+
+        selectionText.textContent =
+            "Selected: " +
+            selectedPackage.name +
+            " — $" +
+            selectedPackage.price +
+            " USD";
+
+        continueArea.classList.add("visible");
+
+    });
+
+});
+
+
+continueButton.addEventListener("click", () => {
+
+    if (!selectedPackage) return;
+
+    /*
+       NEXT STEP:
+       We will replace this with the SPLATT
+       questionnaire URL.
+    */
+
+    alert(
+        "Selected: " +
+        selectedPackage.name +
+        " ($" +
+        selectedPackage.price +
+        ")"
+    );
+
+});
+
+</script>
+
+</body>
+</html>
