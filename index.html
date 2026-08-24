@@ -570,23 +570,19 @@ packages.forEach(card => {
 
 
 continueButton.addEventListener("click", () => {
-
     if (!selectedPackage) return;
 
-    /*
-       NEXT STEP:
-       We will replace this with the SPLATT
-       questionnaire URL.
-    */
+    const paymentLinks = {
+        "150": "https://www.paypal.com/ncp/payment/A3TB2GFL47K9A",
+        "180": "https://www.paypal.com/ncp/payment/4G69AL3GEHWYC",
+        "220": "https://www.paypal.com/ncp/payment/H3GLBMQW3W7KQ"
+    };
 
-    alert(
-        "Selected: " +
-        selectedPackage.name +
-        " ($" +
-        selectedPackage.price +
-        ")"
-    );
+    const paymentUrl = paymentLinks[selectedPackage.price];
 
+    if (paymentUrl) {
+        window.location.href = paymentUrl;
+    }
 });
 
 </script>
