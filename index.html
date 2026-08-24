@@ -581,7 +581,7 @@ continueButton.addEventListener("click", () => {
     const paymentUrl = paymentLinks[selectedPackage.price];
 
     if (paymentUrl) {
-        window.location.href = paymentUrl;
+        window.open(paymentUrl, "_blank");
     }
 });
 
