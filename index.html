@@ -11,28 +11,28 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
 .wrapper{width:min(1500px,100%);margin:auto;padding:18px 14px 50px}
 .package-stage{position:relative;width:100%;line-height:0;isolation:isolate}
 .package-art{display:block;width:100%;height:auto;object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none}
-.hotspot{position:absolute;top:10.3%;height:48.4%;border:2px solid transparent;border-radius:16px;background:transparent;cursor:pointer;transition:box-shadow .18s ease,background .18s ease,border-color .18s ease,filter .18s ease,transform .18s ease;z-index:3}
+.hotspot{position:absolute;top:3.20%;height:51.00%;border:2px solid transparent;border-radius:16px;background:transparent;cursor:pointer;transition:box-shadow .18s ease,background .18s ease,border-color .18s ease,filter .18s ease,transform .18s ease;z-index:3}
 .hotspot:focus-visible{outline:3px solid #fff;outline-offset:3px}
-.hotspot.entry{left:2.25%;width:20.55%;--accent:var(--pink)}
-.hotspot.medium{left:24.95%;width:24.15%;--accent:var(--pink)}
-.hotspot.creator{left:50.65%;width:22.55%;--accent:var(--green)}
-.hotspot.diamond{left:74.45%;width:23.35%;--accent:var(--blue)}
+.hotspot.entry{left:0.95%;width:21.55%;--accent:var(--pink)}
+.hotspot.medium{left:23.70%;width:23.20%;--accent:var(--pink)}
+.hotspot.creator{left:47.90%;width:24.45%;--accent:var(--green)}
+.hotspot.diamond{left:73.85%;width:24.80%;--accent:var(--blue)}
 .hotspot:hover{border-color:color-mix(in srgb,var(--accent) 60%,transparent);background:color-mix(in srgb,var(--accent) 7%,transparent);box-shadow:0 0 16px var(--accent),0 0 42px color-mix(in srgb,var(--accent) 55%,transparent);filter:brightness(1.08)}
 .hotspot.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);box-shadow:0 0 14px var(--accent),0 0 35px var(--accent),inset 0 0 28px color-mix(in srgb,var(--accent) 28%,transparent);filter:brightness(1.16)}
 .hotspot.selected:after{content:"✓ SELECTED";position:absolute;left:50%;bottom:2%;transform:translateX(-50%);padding:9px 13px;border-radius:999px;background:#050505;color:var(--accent);border:1px solid var(--accent);font:bold 12px/1 Arial;white-space:nowrap;box-shadow:0 0 16px var(--accent)}
 .checkout{display:none;margin:20px auto 0;max-width:760px;padding:22px;border:1px solid rgba(255,255,255,.16);border-radius:18px;background:rgba(8,8,8,.94);text-align:center;box-shadow:0 0 30px rgba(255,45,178,.1)}
 .checkout.visible{display:block}.checkout h2{margin:0 0 8px;font-size:clamp(20px,4vw,30px)} .checkout .chosen{color:#ddd;margin-bottom:18px}.payment-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pay{border:1px solid #555;border-radius:12px;background:#111;color:#fff;padding:14px 10px;font-weight:900;cursor:pointer;transition:.18s}.pay:hover{border-color:var(--green);box-shadow:0 0 16px rgba(57,255,20,.35)}.pay[disabled]{opacity:.45;cursor:not-allowed}.note{font-size:12px;color:#aaa;margin:14px 0 0;line-height:1.5}
-@media(max-width:700px){.wrapper{padding:8px 4px 30px}.hotspot{top:10.3%;height:48.4%;border-radius:8px}.hotspot.selected:after{font-size:8px;padding:6px 7px}.payment-row{grid-template-columns:1fr}.checkout{margin:12px 6px 0}}
+@media(max-width:700px){.wrapper{padding:8px 4px 30px}.hotspot{top:3.20%;height:51.00%;border-radius:8px}.hotspot.selected:after{font-size:8px;padding:6px 7px}.payment-row{grid-template-columns:1fr}.checkout{margin:12px 6px 0}}
 
 .overlay-control{position:absolute;z-index:8;font-family:Arial,Helvetica,sans-serif}
-.addon-check{left:9.15%;top:66.55%;width:1.35%;height:2.15%;accent-color:var(--pink);cursor:pointer}
-.addon-code{left:24.45%;top:65.1%;width:10.1%;height:4.05%;border:1px solid rgba(255,45,178,.75);border-radius:6px;background:rgba(0,0,0,.88);color:#fff;padding:0 8px;font-size:clamp(7px,.75vw,12px);outline:none}
+.addon-check{left:7.38%;top:62.15%;width:1.45%;height:2.45%;accent-color:var(--pink);cursor:pointer;margin:0}
+.addon-code{left:23.70%;top:59.05%;width:11.95%;height:4.45%;border:1px solid transparent;border-radius:6px;background:rgba(0,0,0,.92);color:#fff;padding:0 8px;text-align:center;font-size:clamp(7px,.75vw,12px);outline:none}
 .addon-code:focus{box-shadow:0 0 12px var(--pink);border-color:var(--pink)}
 .overlay-btn{border:1px solid currentColor;border-radius:8px;background:rgba(0,0,0,.18);cursor:pointer;color:#fff;font-weight:900;transition:.18s;line-height:1}
 .overlay-btn:hover,.overlay-btn:focus-visible{filter:brightness(1.25);box-shadow:0 0 18px currentColor;outline:none}
-.unlock-btn{left:35.0%;top:68.25%;width:12.2%;height:4.2%;color:var(--pink);background:rgba(255,45,178,.16)}
-.request-btn{left:57.2%;top:68.3%;width:8.8%;height:4.15%;color:var(--green);background:rgba(57,255,20,.14)}
-.shop-btn{left:87.0%;top:68.3%;width:9.5%;height:4.15%;color:var(--pink);background:rgba(255,45,178,.14)}
+.unlock-btn{left:23.70%;top:65.05%;width:11.95%;height:4.55%;color:var(--pink);background:rgba(255,45,178,.06)}
+.request-btn{left:56.35%;top:65.40%;width:9.30%;height:4.40%;color:var(--green);background:rgba(57,255,20,.06)}
+.shop-btn{left:87.30%;top:65.35%;width:10.10%;height:4.45%;color:var(--pink);background:rgba(255,45,178,.06)}
 .modal{position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:18px;background:rgba(0,0,0,.82)}.modal.open{display:grid}.modal-card{width:min(620px,100%);max-height:90vh;overflow:auto;background:#090909;border:1px solid var(--green);border-radius:18px;padding:22px;box-shadow:0 0 34px rgba(57,255,20,.25)}.modal-card h2{margin-top:0;color:var(--green)}.form-grid{display:grid;gap:12px}.form-grid input,.form-grid textarea,.form-grid select{width:100%;background:#111;color:#fff;border:1px solid #555;border-radius:9px;padding:12px}.form-grid textarea{min-height:120px;resize:vertical}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}.modal-actions button{padding:11px 16px;border-radius:9px;border:1px solid #666;background:#151515;color:#fff;cursor:pointer}.modal-actions .primary{border-color:var(--green);color:var(--green)}
 @media(max-width:700px){.addon-code{font-size:5px;padding:0 3px}.overlay-btn{font-size:0}.addon-check{min-width:10px;min-height:10px}}
 </style>
