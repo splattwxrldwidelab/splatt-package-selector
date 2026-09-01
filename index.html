@@ -3,589 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Creator Packages</title>
-
+<title>SPLATT WXRLDWIDE — Creator Packages</title>
 <style>
-* {
-    box-sizing: border-box;
-}
-
-body {
-    margin: 0;
-    background:
-        radial-gradient(circle at 50% 0%, rgba(57,255,20,.10), transparent 35%),
-        #050505;
-    color: white;
-    font-family: Arial, Helvetica, sans-serif;
-    min-height: 100vh;
-}
-
-/* ELECTRIC BACKGROUND */
-body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    opacity: .22;
-
-    background-image:
-        radial-gradient(circle at 15% 25%, #39ff14 0 1px, transparent 2px),
-        radial-gradient(circle at 80% 35%, #39ff14 0 1px, transparent 2px),
-        radial-gradient(circle at 35% 75%, #ff2db2 0 1px, transparent 2px);
-
-    background-size: 85px 85px, 120px 120px, 150px 150px;
-}
-
-.wrapper {
-    max-width: 1150px;
-    margin: auto;
-    padding: 45px 20px 55px;
-}
-
-.heading {
-    text-align: center;
-    margin-bottom: 35px;
-}
-
-.heading h1 {
-    margin: 0;
-    font-size: clamp(34px, 6vw, 70px);
-    font-weight: 1000;
-    letter-spacing: 2px;
-    color: #ff2db2;
-
-    text-shadow:
-        0 0 8px #ff2db2,
-        0 0 18px rgba(255,45,178,.55);
-}
-
-.heading p {
-    margin-top: 12px;
-    color: #d8d8d8;
-    font-size: 17px;
-}
-
-/* PACKAGE GRID */
-
-.packages {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 22px;
-}
-
-/* CARD */
-
-.package {
-    position: relative;
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(255,45,178,.12),
-            rgba(0,0,0,.95)
-        );
-
-    border: 3px solid #ff2db2;
-    border-radius: 18px;
-
-    padding: 30px 22px;
-
-    cursor: pointer;
-
-    min-height: 420px;
-
-    display: flex;
-    flex-direction: column;
-
-    transition:
-        background .22s ease,
-        border-color .22s ease,
-        transform .22s ease,
-        box-shadow .22s ease;
-}
-
-/* GREEN STATIC EDGE */
-
-.package::before {
-    content: "";
-    position: absolute;
-    inset: -5px;
-    border-radius: 21px;
-
-    border: 1px solid rgba(57,255,20,.30);
-
-    opacity: .35;
-    pointer-events: none;
-
-    box-shadow:
-        0 0 8px rgba(57,255,20,.25),
-        0 0 18px rgba(57,255,20,.15);
-}
-
-/* HOVER */
-
-.package:hover,
-.package.selected {
-
-    background:
-        linear-gradient(
-            145deg,
-            rgba(57,255,20,.24),
-            rgba(0,0,0,.96)
-        );
-
-    border-color: #39ff14;
-
-    transform: translateY(-7px);
-
-    box-shadow:
-        0 0 10px #39ff14,
-        0 0 25px rgba(57,255,20,.75),
-        0 0 45px rgba(57,255,20,.32);
-}
-
-.package:hover::before,
-.package.selected::before {
-    opacity: 1;
-
-    box-shadow:
-        0 0 8px #39ff14,
-        0 0 18px #39ff14,
-        0 0 35px rgba(57,255,20,.70);
-}
-
-/* TITLES */
-
-.package-name {
-    color: #39ff14;
-    font-weight: 900;
-    text-align: center;
-    font-size: 21px;
-    letter-spacing: 1px;
-    min-height: 52px;
-}
-
-.price {
-    text-align: center;
-    color: #ff2db2;
-
-    font-size: 52px;
-    font-weight: 1000;
-
-    margin: 8px 0 22px;
-
-    text-shadow:
-        0 0 8px rgba(255,45,178,.65);
-}
-
-/* When hovered */
-
-.package:hover .package-name,
-.package.selected .package-name {
-    color: #ff2db2;
-}
-
-.package:hover .price,
-.package.selected .price {
-    color: #ff2db2;
-
-    text-shadow:
-        0 0 10px #ff2db2,
-        0 0 22px rgba(255,45,178,.75);
-}
-
-/* FEATURES */
-
-.features {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    flex-grow: 1;
-}
-
-.features li {
-    padding: 9px 0;
-    border-bottom: 1px solid rgba(255,255,255,.10);
-    font-size: 15px;
-}
-
-.features li::before {
-    content: "✓";
-    color: #39ff14;
-    font-weight: bold;
-    margin-right: 8px;
-}
-
-/* RECOMMENDED CARD */
-
-.recommended {
-    border-color: #39ff14;
-
-    box-shadow:
-        0 0 10px rgba(57,255,20,.45),
-        0 0 25px rgba(57,255,20,.18);
-}
-
-.badge {
-    position: absolute;
-    top: -14px;
-    left: 50%;
-    transform: translateX(-50%);
-
-    background: #39ff14;
-    color: #050505;
-
-    padding: 7px 15px;
-
-    border-radius: 30px;
-
-    font-size: 12px;
-    font-weight: 1000;
-
-    white-space: nowrap;
-
-    box-shadow:
-        0 0 10px rgba(57,255,20,.75);
-}
-
-/* SELECT BUTTON */
-
-.select-button {
-    margin-top: 24px;
-
-    border: 2px solid #39ff14;
-    border-radius: 10px;
-
-    background: #ff2db2;
-
-    color: #39ff14;
-
-    font-weight: 1000;
-    font-size: 15px;
-
-    padding: 14px 10px;
-
-    text-align: center;
-
-    transition: .2s ease;
-}
-
-.package:hover .select-button,
-.package.selected .select-button {
-
-    background: #39ff14;
-
-    color: #ff2db2;
-
-    border-color: #ff2db2;
-
-    box-shadow:
-        0 0 8px #39ff14,
-        0 0 20px rgba(57,255,20,.75);
-}
-
-/* CONTINUE AREA */
-
-.continue-area {
-    display: none;
-    text-align: center;
-    margin-top: 35px;
-}
-
-.continue-area.visible {
-    display: block;
-}
-
-.selection-text {
-    margin-bottom: 15px;
-    color: white;
-    font-weight: bold;
-}
-
-.continue-button {
-
-    display: inline-block;
-
-    background: #ff2db2;
-    color: #39ff14;
-
-    border: 2px solid #39ff14;
-
-    padding: 16px 35px;
-
-    border-radius: 12px;
-
-    font-size: 17px;
-    font-weight: 1000;
-
-    cursor: pointer;
-
-    box-shadow:
-        0 0 15px rgba(57,255,20,.40);
-
-    transition: .2s ease;
-}
-
-.continue-button:hover {
-
-    background: #39ff14;
-    color: #ff2db2;
-
-    border-color: #ff2db2;
-
-    box-shadow:
-        0 0 10px #39ff14,
-        0 0 28px #39ff14;
-}
-
-/* MOBILE */
-
-@media (max-width: 800px) {
-
-    .packages {
-        grid-template-columns: 1fr;
-    }
-
-    .package {
-        min-height: auto;
-    }
-
-    .wrapper {
-        padding-top: 30px;
-    }
-}
-
+:root{--pink:#ff2db2;--green:#39ff14;--blue:#4edcff;--bg:#050505}
+*{box-sizing:border-box} body{margin:0;background:#050505;color:#fff;font-family:Arial,Helvetica,sans-serif;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;background:radial-gradient(circle at 20% 20%,rgba(255,45,178,.22),transparent 28%),radial-gradient(circle at 80% 15%,rgba(57,255,20,.16),transparent 28%),radial-gradient(circle at 90% 80%,rgba(78,220,255,.14),transparent 25%)}
+.wrapper{width:min(1500px,100%);margin:auto;padding:18px 14px 50px}
+.package-stage{position:relative;width:100%;line-height:0;isolation:isolate}
+.package-art{display:block;width:100%;height:auto;object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none}
+.hotspot{position:absolute;top:21%;height:42%;border:2px solid transparent;border-radius:16px;background:transparent;cursor:pointer;transition:box-shadow .18s ease,background .18s ease,border-color .18s ease,filter .18s ease,transform .18s ease;z-index:3}
+.hotspot:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.hotspot.entry{left:2.3%;width:23.1%;--accent:var(--pink)}
+.hotspot.medium{left:26.3%;width:23.1%;--accent:var(--pink)}
+.hotspot.creator{left:50.4%;width:23.1%;--accent:var(--green)}
+.hotspot.diamond{left:74.5%;width:23.1%;--accent:var(--blue)}
+.hotspot:hover{border-color:color-mix(in srgb,var(--accent) 60%,transparent);background:color-mix(in srgb,var(--accent) 7%,transparent);box-shadow:0 0 16px var(--accent),0 0 42px color-mix(in srgb,var(--accent) 55%,transparent);filter:brightness(1.08)}
+.hotspot.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);box-shadow:0 0 14px var(--accent),0 0 35px var(--accent),inset 0 0 28px color-mix(in srgb,var(--accent) 28%,transparent);filter:brightness(1.16);transform:translateY(-2px)}
+.hotspot.selected:after{content:"✓ SELECTED";position:absolute;left:50%;bottom:2%;transform:translateX(-50%);padding:9px 13px;border-radius:999px;background:#050505;color:var(--accent);border:1px solid var(--accent);font:bold 12px/1 Arial;white-space:nowrap;box-shadow:0 0 16px var(--accent)}
+.checkout{display:none;margin:20px auto 0;max-width:760px;padding:22px;border:1px solid rgba(255,255,255,.16);border-radius:18px;background:rgba(8,8,8,.94);text-align:center;box-shadow:0 0 30px rgba(255,45,178,.1)}
+.checkout.visible{display:block}.checkout h2{margin:0 0 8px;font-size:clamp(20px,4vw,30px)} .checkout .chosen{color:#ddd;margin-bottom:18px}.payment-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pay{border:1px solid #555;border-radius:12px;background:#111;color:#fff;padding:14px 10px;font-weight:900;cursor:pointer;transition:.18s}.pay:hover{border-color:var(--green);box-shadow:0 0 16px rgba(57,255,20,.35)}.pay[disabled]{opacity:.45;cursor:not-allowed}.note{font-size:12px;color:#aaa;margin:14px 0 0;line-height:1.5}
+@media(max-width:700px){.wrapper{padding:8px 4px 30px}.hotspot{top:21%;height:42%;border-radius:8px}.hotspot.selected:after{font-size:8px;padding:6px 7px}.payment-row{grid-template-columns:1fr}.checkout{margin:12px 6px 0}}
 </style>
 </head>
-
 <body>
+<main class="wrapper">
+  <section class="package-stage" aria-label="SPLATT creator packages">
+    <img class="package-art" src="assets/creator-packages.png" alt="SPLATT WXRLDWIDE Creator Packages">
+    <button class="hotspot entry" data-name="Entry Level" data-price="150" aria-label="Select Entry Level package for 150 US dollars"></button>
+    <button class="hotspot medium" data-name="Medium Influencer" data-price="180" aria-label="Select Medium Influencer package for 180 US dollars"></button>
+    <button class="hotspot creator" data-name="Content Creator" data-price="220" aria-label="Select Content Creator package for 220 US dollars"></button>
+    <button class="hotspot diamond" data-name="Diamond Package" data-price="310" aria-label="Select Diamond package for 310 US dollars"></button>
+  </section>
 
-<div class="wrapper">
-
-    <div class="heading">
-
-        <h1>CREATOR PACKAGES</h1>
-
-        <p>
-            Choose the branding package that fits your content.
-        </p>
-
+  <section class="checkout" id="checkout" aria-live="polite">
+    <h2 id="checkoutTitle">SELECT A PACKAGE</h2>
+    <div class="chosen" id="chosen"></div>
+    <div class="payment-row">
+      <button class="pay" id="paypalBtn">PayPal</button>
+      <button class="pay" id="cardBtn">Card</button>
+      <button class="pay" id="appleBtn">Apple Pay</button>
     </div>
-
-
-    <div class="packages">
-
-
-        <!-- ENTRY LEVEL -->
-
-        <div
-            class="package"
-            data-package="Entry Level"
-            data-price="150"
-        >
-
-            <div class="package-name">
-                ENTRY LEVEL
-            </div>
-
-            <div class="price">
-                $150
-            </div>
-
-            <ul class="features">
-
-                <li>2 Standard Name Watermark Options</li>
-
-                <li>3 Custom Emojis</li>
-
-                <li>FREE Green W Emoji</li>
-
-                <li>FREE Red L Emoji</li>
-
-                <li>Kick-ready formatting</li>
-
-            </ul>
-
-            <div class="select-button">
-                SELECT PACKAGE
-            </div>
-
-        </div>
-
-
-        <!-- MEDIUM -->
-
-        <div
-            class="package"
-            data-package="Medium Influencer"
-            data-price="180"
-        >
-
-            <div class="package-name">
-                MEDIUM INFLUENCER
-            </div>
-
-            <div class="price">
-                $180
-            </div>
-
-            <ul class="features">
-
-                <li>4 Custom Watermark Options</li>
-
-                <li>6 Custom Emojis</li>
-
-                <li>1 Custom Banner</li>
-
-                <li>FREE Green W Emoji</li>
-
-                <li>FREE Red L Emoji</li>
-
-                <li>Kick-ready formatting</li>
-
-            </ul>
-
-            <div class="select-button">
-                SELECT PACKAGE
-            </div>
-
-        </div>
-
-
-        <!-- CONTENT CREATOR -->
-
-        <div
-            class="package recommended"
-            data-package="Content Creator"
-            data-price="220"
-        >
-
-            <div class="badge">
-                RECOMMENDED • VALUE PACK
-            </div>
-
-            <div class="package-name">
-                CONTENT CREATOR
-            </div>
-
-            <div class="price">
-                $220
-            </div>
-
-            <ul class="features">
-
-                <li>8 Custom Watermark Options</li>
-
-                <li>10 Custom Emojis</li>
-
-                <li>1 Custom Banner</li>
-
-                <li>1 Offline Banner</li>
-
-                <li>FREE Green W Emoji</li>
-
-                <li>FREE Red L Emoji</li>
-
-                <li>Kick-ready formatting</li>
-
-            </ul>
-
-            <div class="select-button">
-                SELECT PACKAGE
-            </div>
-
-        </div>
-
-
-    </div>
-
-
-    <div
-        class="continue-area"
-        id="continueArea"
-    >
-
-        <div
-            class="selection-text"
-            id="selectionText"
-        ></div>
-
-        <button
-            class="continue-button"
-            id="continueButton"
-        >
-            CONTINUE TO DESIGN QUESTIONNAIRE →
-        </button>
-
-    </div>
-
-</div>
-
-
+    <p class="note">Secure payment opens after package selection. The questionnaire should be shown only after a verified successful payment.</p>
+  </section>
+</main>
 <script>
+const hotspots=[...document.querySelectorAll('.hotspot')];
+const checkout=document.getElementById('checkout');
+const checkoutTitle=document.getElementById('checkoutTitle');
+const chosen=document.getElementById('chosen');
+let selected=null;
 
-const packages =
-    document.querySelectorAll(".package");
+// Add your verified direct checkout URLs here. Do not point these at the old intermediate questionnaire pages.
+const checkoutLinks={
+  '150':'',
+  '180':'',
+  '220':'',
+  '310':''
+};
 
-const continueArea =
-    document.getElementById("continueArea");
+hotspots.forEach(zone=>zone.addEventListener('click',()=>{
+  hotspots.forEach(x=>x.classList.remove('selected'));
+  zone.classList.add('selected');
+  selected={name:zone.dataset.name,price:zone.dataset.price};
+  checkoutTitle.textContent=`✓ ${selected.name.toUpperCase()} SELECTED — $${selected.price} USD`;
+  chosen.textContent='Choose your secure payment method below.';
+  checkout.classList.add('visible');
+  checkout.scrollIntoView({behavior:'smooth',block:'nearest'});
+}));
 
-const selectionText =
-    document.getElementById("selectionText");
-
-const continueButton =
-    document.getElementById("continueButton");
-
-let selectedPackage = null;
-
-
-packages.forEach(card => {
-
-    card.addEventListener("click", () => {
-
-        packages.forEach(item =>
-            item.classList.remove("selected")
-        );
-
-        card.classList.add("selected");
-
-        selectedPackage = {
-            name: card.dataset.package,
-            price: card.dataset.price
-        };
-
-        selectionText.textContent =
-            "Selected: " +
-            selectedPackage.name +
-            " — $" +
-            selectedPackage.price +
-            " USD";
-
-        continueArea.classList.add("visible");
-
-    });
-
-});
-
-
-continueButton.addEventListener("click", () => {
-    if (!selectedPackage) return;
-
-    const paymentLinks = {
-        "150": "https://sites.google.com/view/splattwxrldwide/entry-package-150usd",
-        "180": "https://sites.google.com/view/splattwxrldwide/medium-influencer-180usd",
-        "220": "https://sites.google.com/view/splattwxrldwide/content-creator-220usd"
-    };
-
-    const paymentUrl = paymentLinks[selectedPackage.price];
-
-    if (paymentUrl) {
-        window.open(paymentUrl, "_blank");
-    }
-});
-
+function startCheckout(method){
+  if(!selected)return;
+  const url=checkoutLinks[selected.price];
+  if(url){ window.location.href=url; return; }
+  alert(`${method} checkout for ${selected.name} ($${selected.price}) is ready to connect. Add the verified payment URL/API before publishing checkout.`);
+}
+document.getElementById('paypalBtn').addEventListener('click',()=>startCheckout('PayPal'));
+document.getElementById('cardBtn').addEventListener('click',()=>startCheckout('Card'));
+document.getElementById('appleBtn').addEventListener('click',()=>startCheckout('Apple Pay'));
 </script>
-
 </body>
 </html>
