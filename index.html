@@ -11,18 +11,30 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
 .wrapper{width:min(1500px,100%);margin:auto;padding:18px 14px 50px}
 .package-stage{position:relative;width:100%;line-height:0;isolation:isolate}
 .package-art{display:block;width:100%;height:auto;object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none}
-.hotspot{position:absolute;top:21%;height:42%;border:2px solid transparent;border-radius:16px;background:transparent;cursor:pointer;transition:box-shadow .18s ease,background .18s ease,border-color .18s ease,filter .18s ease,transform .18s ease;z-index:3}
+.hotspot{position:absolute;top:10.3%;height:48.4%;border:2px solid transparent;border-radius:16px;background:transparent;cursor:pointer;transition:box-shadow .18s ease,background .18s ease,border-color .18s ease,filter .18s ease,transform .18s ease;z-index:3}
 .hotspot:focus-visible{outline:3px solid #fff;outline-offset:3px}
-.hotspot.entry{left:2.3%;width:23.1%;--accent:var(--pink)}
-.hotspot.medium{left:26.3%;width:23.1%;--accent:var(--pink)}
-.hotspot.creator{left:50.4%;width:23.1%;--accent:var(--green)}
-.hotspot.diamond{left:74.5%;width:23.1%;--accent:var(--blue)}
+.hotspot.entry{left:2.25%;width:20.55%;--accent:var(--pink)}
+.hotspot.medium{left:24.95%;width:24.15%;--accent:var(--pink)}
+.hotspot.creator{left:50.65%;width:22.55%;--accent:var(--green)}
+.hotspot.diamond{left:74.45%;width:23.35%;--accent:var(--blue)}
 .hotspot:hover{border-color:color-mix(in srgb,var(--accent) 60%,transparent);background:color-mix(in srgb,var(--accent) 7%,transparent);box-shadow:0 0 16px var(--accent),0 0 42px color-mix(in srgb,var(--accent) 55%,transparent);filter:brightness(1.08)}
-.hotspot.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);box-shadow:0 0 14px var(--accent),0 0 35px var(--accent),inset 0 0 28px color-mix(in srgb,var(--accent) 28%,transparent);filter:brightness(1.16);transform:translateY(-2px)}
+.hotspot.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);box-shadow:0 0 14px var(--accent),0 0 35px var(--accent),inset 0 0 28px color-mix(in srgb,var(--accent) 28%,transparent);filter:brightness(1.16)}
 .hotspot.selected:after{content:"✓ SELECTED";position:absolute;left:50%;bottom:2%;transform:translateX(-50%);padding:9px 13px;border-radius:999px;background:#050505;color:var(--accent);border:1px solid var(--accent);font:bold 12px/1 Arial;white-space:nowrap;box-shadow:0 0 16px var(--accent)}
 .checkout{display:none;margin:20px auto 0;max-width:760px;padding:22px;border:1px solid rgba(255,255,255,.16);border-radius:18px;background:rgba(8,8,8,.94);text-align:center;box-shadow:0 0 30px rgba(255,45,178,.1)}
 .checkout.visible{display:block}.checkout h2{margin:0 0 8px;font-size:clamp(20px,4vw,30px)} .checkout .chosen{color:#ddd;margin-bottom:18px}.payment-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pay{border:1px solid #555;border-radius:12px;background:#111;color:#fff;padding:14px 10px;font-weight:900;cursor:pointer;transition:.18s}.pay:hover{border-color:var(--green);box-shadow:0 0 16px rgba(57,255,20,.35)}.pay[disabled]{opacity:.45;cursor:not-allowed}.note{font-size:12px;color:#aaa;margin:14px 0 0;line-height:1.5}
-@media(max-width:700px){.wrapper{padding:8px 4px 30px}.hotspot{top:21%;height:42%;border-radius:8px}.hotspot.selected:after{font-size:8px;padding:6px 7px}.payment-row{grid-template-columns:1fr}.checkout{margin:12px 6px 0}}
+@media(max-width:700px){.wrapper{padding:8px 4px 30px}.hotspot{top:10.3%;height:48.4%;border-radius:8px}.hotspot.selected:after{font-size:8px;padding:6px 7px}.payment-row{grid-template-columns:1fr}.checkout{margin:12px 6px 0}}
+
+.overlay-control{position:absolute;z-index:8;font-family:Arial,Helvetica,sans-serif}
+.addon-check{left:9.15%;top:66.55%;width:1.35%;height:2.15%;accent-color:var(--pink);cursor:pointer}
+.addon-code{left:24.45%;top:65.1%;width:10.1%;height:4.05%;border:1px solid rgba(255,45,178,.75);border-radius:6px;background:rgba(0,0,0,.88);color:#fff;padding:0 8px;font-size:clamp(7px,.75vw,12px);outline:none}
+.addon-code:focus{box-shadow:0 0 12px var(--pink);border-color:var(--pink)}
+.overlay-btn{border:1px solid currentColor;border-radius:8px;background:rgba(0,0,0,.18);cursor:pointer;color:#fff;font-weight:900;transition:.18s;line-height:1}
+.overlay-btn:hover,.overlay-btn:focus-visible{filter:brightness(1.25);box-shadow:0 0 18px currentColor;outline:none}
+.unlock-btn{left:35.0%;top:68.25%;width:12.2%;height:4.2%;color:var(--pink);background:rgba(255,45,178,.16)}
+.request-btn{left:57.2%;top:68.3%;width:8.8%;height:4.15%;color:var(--green);background:rgba(57,255,20,.14)}
+.shop-btn{left:87.0%;top:68.3%;width:9.5%;height:4.15%;color:var(--pink);background:rgba(255,45,178,.14)}
+.modal{position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:18px;background:rgba(0,0,0,.82)}.modal.open{display:grid}.modal-card{width:min(620px,100%);max-height:90vh;overflow:auto;background:#090909;border:1px solid var(--green);border-radius:18px;padding:22px;box-shadow:0 0 34px rgba(57,255,20,.25)}.modal-card h2{margin-top:0;color:var(--green)}.form-grid{display:grid;gap:12px}.form-grid input,.form-grid textarea,.form-grid select{width:100%;background:#111;color:#fff;border:1px solid #555;border-radius:9px;padding:12px}.form-grid textarea{min-height:120px;resize:vertical}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}.modal-actions button{padding:11px 16px;border-radius:9px;border:1px solid #666;background:#151515;color:#fff;cursor:pointer}.modal-actions .primary{border-color:var(--green);color:var(--green)}
+@media(max-width:700px){.addon-code{font-size:5px;padding:0 3px}.overlay-btn{font-size:0}.addon-check{min-width:10px;min-height:10px}}
 </style>
 </head>
 <body>
@@ -33,6 +45,12 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
     <button class="hotspot medium" data-name="Medium Influencer" data-price="180" aria-label="Select Medium Influencer package for 180 US dollars"></button>
     <button class="hotspot creator" data-name="Content Creator" data-price="220" aria-label="Select Content Creator package for 220 US dollars"></button>
     <button class="hotspot diamond" data-name="Diamond Package" data-price="310" aria-label="Select Diamond package for 310 US dollars"></button>
+
+    <input class="overlay-control addon-check" id="addonCustomer" type="checkbox" aria-label="I am an existing SPLATT customer">
+    <input class="overlay-control addon-code" id="addonCode" type="text" placeholder="ENTER CODE" aria-label="SPLATT customer code">
+    <button class="overlay-control overlay-btn unlock-btn" id="unlockAddons" aria-label="Unlock add-ons"></button>
+    <button class="overlay-control overlay-btn request-btn" id="customRequest" aria-label="Submit a custom request"></button>
+    <button class="overlay-control overlay-btn shop-btn" id="shopAddons" aria-label="Shop add-ons"></button>
   </section>
 
   <section class="checkout" id="checkout" aria-live="polite">
@@ -46,6 +64,20 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
     <p class="note">Secure payment opens after package selection. The questionnaire should be shown only after a verified successful payment.</p>
   </section>
 </main>
+<div class="modal" id="requestModal" role="dialog" aria-modal="true" aria-labelledby="requestTitle">
+  <div class="modal-card">
+    <h2 id="requestTitle">CUSTOM REQUEST ZONE</h2>
+    <form class="form-grid" id="requestForm">
+      <input name="name" required placeholder="Your name / creator name">
+      <input name="email" type="email" required placeholder="Email address">
+      <select name="type" required><option value="">What do you need?</option><option>Watermark</option><option>Emoji</option><option>GIF emote</option><option>Profile banner</option><option>Offline banner</option><option>Other custom design</option></select>
+      <textarea name="details" required placeholder="Describe your idea, colours, style, platform and anything else we should know."></textarea>
+      <input name="reference" placeholder="Optional reference link">
+      <div class="modal-actions"><button type="button" id="closeRequest">Cancel</button><button class="primary" type="submit">Prepare Request</button></div>
+    </form>
+  </div>
+</div>
+
 <script>
 const hotspots=[...document.querySelectorAll('.hotspot')];
 const checkout=document.getElementById('checkout');
@@ -80,6 +112,24 @@ function startCheckout(method){
 document.getElementById('paypalBtn').addEventListener('click',()=>startCheckout('PayPal'));
 document.getElementById('cardBtn').addEventListener('click',()=>startCheckout('Card'));
 document.getElementById('appleBtn').addEventListener('click',()=>startCheckout('Apple Pay'));
+
+
+const addonCustomer=document.getElementById('addonCustomer');
+const addonCode=document.getElementById('addonCode');
+document.getElementById('unlockAddons').addEventListener('click',()=>{
+  if(!addonCustomer.checked){alert('Please confirm you are an existing SPLATT customer.');return;}
+  if(!addonCode.value.trim()){addonCode.focus();alert('Enter your SPLATT customer code to unlock Add-On Mode.');return;}
+  alert('Customer-code verification will activate once the secure customer database is connected. Your code has not been accepted or charged yet.');
+});
+const modal=document.getElementById('requestModal');
+document.getElementById('customRequest').addEventListener('click',()=>modal.classList.add('open'));
+document.getElementById('closeRequest').addEventListener('click',()=>modal.classList.remove('open'));
+modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});
+document.getElementById('requestForm').addEventListener('submit',e=>{e.preventDefault();alert('Your custom request form is ready. The next step is connecting its secure submission destination.');});
+document.getElementById('shopAddons').addEventListener('click',()=>{
+  if(!addonCustomer.checked || !addonCode.value.trim()){alert('Add-On Store is for existing SPLATT customers. Tick the customer box and enter your customer code first.');addonCode.focus();return;}
+  alert('Add-On Store access will open here after customer-code verification is connected.');
+});
 </script>
 </body>
 </html>
