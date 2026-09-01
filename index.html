@@ -35,6 +35,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
 .shop-btn{left:87.30%;top:65.35%;width:10.10%;height:4.45%;color:var(--pink);background:rgba(255,45,178,.06)}
 .modal{position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:18px;background:rgba(0,0,0,.82)}.modal.open{display:grid}.modal-card{width:min(620px,100%);max-height:90vh;overflow:auto;background:#090909;border:1px solid var(--green);border-radius:18px;padding:22px;box-shadow:0 0 34px rgba(57,255,20,.25)}.modal-card h2{margin-top:0;color:var(--green)}.form-grid{display:grid;gap:12px}.form-grid input,.form-grid textarea,.form-grid select{width:100%;background:#111;color:#fff;border:1px solid #555;border-radius:9px;padding:12px}.form-grid textarea{min-height:120px;resize:vertical}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}.modal-actions button{padding:11px 16px;border-radius:9px;border:1px solid #666;background:#151515;color:#fff;cursor:pointer}.modal-actions .primary{border-color:var(--green);color:var(--green)}
 @media(max-width:700px){.addon-code{font-size:5px;padding:0 3px}.overlay-btn{font-size:0}.addon-check{min-width:10px;min-height:10px}}
+
+.card-modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}.card-modal.open{display:flex}.card-box{width:min(460px,100%);background:#090b0b;border:2px solid #39ff88;border-radius:18px;padding:22px;box-shadow:0 0 30px rgba(57,255,136,.25)}.card-box h2{margin:0 0 8px}.card-box p{opacity:.8}.card-field{height:52px;background:white;border-radius:9px;margin:12px 0;overflow:hidden}.card-actions{display:flex;gap:10px;margin-top:14px}.card-actions button{flex:1;padding:13px;border-radius:10px;border:0;font-weight:800;cursor:pointer}.card-actions .primary{background:#39ff88;color:#041108}.verified-link{display:inline-block;margin-top:14px;padding:14px 20px;border-radius:12px;background:#39ff88;color:#041108;text-decoration:none;font-weight:900}.pay:disabled{opacity:.48;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -64,6 +66,17 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
     <p class="note">Secure payment opens after package selection. The questionnaire should be shown only after a verified successful payment.</p>
   </section>
 </main>
+<div class="card-modal" id="cardModal" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
+  <div class="card-box">
+    <h2 id="cardTitle">SECURE CARD PAYMENT</h2>
+    <p id="cardStatus">Enter your card details below. Card fields are securely hosted by PayPal.</p>
+    <div class="card-field" id="paypal-card-fields-number"></div>
+    <div class="card-field" id="paypal-card-fields-expiry"></div>
+    <div class="card-field" id="paypal-card-fields-cvv"></div>
+    <div class="card-actions"><button type="button" id="closeCard">Cancel</button><button class="primary" type="button" id="submitCard">Pay securely</button></div>
+  </div>
+</div>
+
 <div class="modal" id="requestModal" role="dialog" aria-modal="true" aria-labelledby="requestTitle">
   <div class="modal-card">
     <h2 id="requestTitle">CUSTOM REQUEST ZONE</h2>
@@ -78,6 +91,7 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
   </div>
 </div>
 
+<script async src="https://www.sandbox.paypal.com/web-sdk/v6/core" onload="onPayPalWebSdkLoaded()"></script>
 <script>
 const hotspots=[...document.querySelectorAll('.hotspot')];
 const checkout=document.getElementById('checkout');
@@ -89,6 +103,9 @@ const appleBtn=document.getElementById('appleBtn');
 
 const CREATE_ORDER_URL='https://ulsfycyfhxdkgatxqavh.supabase.co/functions/v1/quick-handler';
 const CAPTURE_ORDER_URL='https://ulsfycyfhxdkgatxqavh.supabase.co/functions/v1/smart-function';
+const CLIENT_TOKEN_URL='https://ulsfycyfhxdkgatxqavh.supabase.co/functions/v1/smart-handler';
+const QUESTIONNAIRE_URL='https://docs.google.com/forms/d/e/1FAIpQLSd8ssAq_JoZcySZN1L4x1XO_-Oq-N8aNHSwJ14tY7odZrEcBw/viewform';
+let cardSession=null;
 
 const packageIds={
   '150':'entry',
@@ -118,7 +135,7 @@ async function startPayPalCheckout(){
     const response=await fetch(CREATE_ORDER_URL,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({packageId:selected.packageId})
+      body:JSON.stringify({packageId:selected.packageId,paymentMethod:'paypal'})
     });
     const data=await response.json();
     if(!response.ok || !data.orderId || !data.approveLink){
@@ -140,8 +157,70 @@ async function startPayPalCheckout(){
 }
 
 paypalBtn.addEventListener('click',startPayPalCheckout);
-cardBtn.addEventListener('click',()=>alert('Card checkout is the next payment method being connected.'));
-appleBtn.addEventListener('click',()=>alert('Apple Pay will appear once eligibility and checkout configuration are connected.'));
+const cardModal=document.getElementById('cardModal');
+const cardStatus=document.getElementById('cardStatus');
+const submitCard=document.getElementById('submitCard');
+document.getElementById('closeCard').addEventListener('click',()=>cardModal.classList.remove('open'));
+
+async function onPayPalWebSdkLoaded(){
+  try{
+    const r=await fetch(CLIENT_TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const t=await r.json();
+    if(!r.ok || !t.clientToken) throw new Error(t.error||'Client token unavailable');
+    const sdk=await window.paypal.createInstance({clientToken:t.clientToken,components:['card-fields']});
+    const eligible=await sdk.findEligibleMethods({currencyCode:'USD'});
+    if(eligible && typeof eligible.isEligible==='function' && !eligible.isEligible('advanced_cards')){
+      cardBtn.disabled=true; cardBtn.title='Card checkout is not eligible for this PayPal account/session'; return;
+    }
+    cardSession=sdk.createCardFieldsOneTimePaymentSession();
+    document.querySelector('#paypal-card-fields-number').appendChild(cardSession.createCardFieldsComponent({type:'number',placeholder:'Card number'}));
+    document.querySelector('#paypal-card-fields-expiry').appendChild(cardSession.createCardFieldsComponent({type:'expiry',placeholder:'MM/YY'}));
+    document.querySelector('#paypal-card-fields-cvv').appendChild(cardSession.createCardFieldsComponent({type:'cvv',placeholder:'CVV'}));
+  }catch(e){console.error(e);cardBtn.disabled=true;cardBtn.title='Card checkout could not initialize';}
+}
+
+cardBtn.addEventListener('click',()=>{
+  if(!selected)return;
+  if(!cardSession){chosen.textContent='Secure card checkout is not available in this session.';return;}
+  cardStatus.textContent=`${selected.name} — $${selected.price} USD`;
+  cardModal.classList.add('open');
+});
+
+submitCard.addEventListener('click',async()=>{
+  if(!selected||!cardSession)return;
+  submitCard.disabled=true; cardStatus.textContent='Processing secure card payment…';
+  try{
+    const r=await fetch(CREATE_ORDER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({packageId:selected.packageId,paymentMethod:'card'})});
+    const order=await r.json();
+    if(!r.ok||!order.orderId)throw new Error(order.error||'Unable to create order');
+    const result=await cardSession.submit(order.orderId);
+    if(result.state!=='succeeded')throw new Error(result.data?.message||`Card payment ${result.state||'failed'}`);
+    const cr=await fetch(CAPTURE_ORDER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:order.orderId,packageId:selected.packageId})});
+    const data=await cr.json();
+    if(!cr.ok||data.success!==true||data.paymentVerified!==true)throw new Error(data.error||'Payment verification failed');
+    cardModal.classList.remove('open');
+    showVerifiedPayment(data,selected);
+  }catch(e){console.error(e);cardStatus.textContent='Card payment did not complete. You have not been verified as paid. Please check the details or try another method.';}
+  finally{submitCard.disabled=false;}
+});
+
+appleBtn.addEventListener('click',()=>{
+  chosen.textContent='Apple Pay is not being offered in this checkout yet because PayPal Apple Pay eligibility depends on the merchant account country and customer device. Use PayPal or Card.';
+});
+
+function showVerifiedPayment(data,pending){
+  localStorage.removeItem('splattPendingPayPal');
+  checkout.classList.add('visible');
+  checkoutTitle.textContent='✓ PAYMENT VERIFIED';
+  chosen.innerHTML='';
+  const msg=document.createElement('div');
+  msg.textContent=`${data.packageName || pending.packageName} — $${data.amount || pending.amount} ${data.currency || 'USD'} successfully paid.`;
+  const link=document.createElement('a');
+  link.className='verified-link'; link.href=QUESTIONNAIRE_URL; link.target='_blank'; link.rel='noopener'; link.textContent='OPEN DESIGN QUESTIONNAIRE';
+  chosen.append(msg,link);
+  paypalBtn.style.display='none';cardBtn.style.display='none';appleBtn.style.display='none';
+  history.replaceState({},document.title,window.location.pathname);
+}
 
 async function finishReturnedPayPalPayment(){
   const params=new URLSearchParams(window.location.search);
@@ -172,12 +251,7 @@ async function finishReturnedPayPalPayment(){
     if(!response.ok || data.success!==true || data.paymentVerified!==true){
       throw new Error(data.error || 'Payment verification failed');
     }
-    localStorage.removeItem('splattPendingPayPal');
-    checkoutTitle.textContent='✓ PAYMENT VERIFIED';
-    chosen.textContent=`${data.packageName || pending.packageName} — $${data.amount || pending.amount} ${data.currency || 'USD'} successfully paid. Your questionnaire can now be unlocked.`;
-    paypalBtn.style.display='none'; cardBtn.style.display='none'; appleBtn.style.display='none';
-    history.replaceState({},document.title,window.location.pathname);
-    // IMPORTANT: questionnaire redirect/unlock goes here after its final URL is supplied.
+    showVerifiedPayment(data,pending);
   }catch(error){
     console.error(error);
     checkoutTitle.textContent='PAYMENT VERIFICATION NEEDS ATTENTION';
