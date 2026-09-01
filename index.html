@@ -83,36 +83,109 @@ const hotspots=[...document.querySelectorAll('.hotspot')];
 const checkout=document.getElementById('checkout');
 const checkoutTitle=document.getElementById('checkoutTitle');
 const chosen=document.getElementById('chosen');
-let selected=null;
+const paypalBtn=document.getElementById('paypalBtn');
+const cardBtn=document.getElementById('cardBtn');
+const appleBtn=document.getElementById('appleBtn');
 
-// Add your verified direct checkout URLs here. Do not point these at the old intermediate questionnaire pages.
-const checkoutLinks={
-  '150':'',
-  '180':'',
-  '220':'',
-  '310':''
+const CREATE_ORDER_URL='https://ulsfycyfhxdkgatxqavh.supabase.co/functions/v1/quick-handler';
+const CAPTURE_ORDER_URL='https://ulsfycyfhxdkgatxqavh.supabase.co/functions/v1/smart-function';
+
+const packageIds={
+  '150':'entry',
+  '180':'medium',
+  '220':'creator',
+  '310':'diamond'
 };
+
+let selected=null;
 
 hotspots.forEach(zone=>zone.addEventListener('click',()=>{
   hotspots.forEach(x=>x.classList.remove('selected'));
   zone.classList.add('selected');
-  selected={name:zone.dataset.name,price:zone.dataset.price};
+  selected={name:zone.dataset.name,price:zone.dataset.price,packageId:packageIds[zone.dataset.price]};
   checkoutTitle.textContent=`✓ ${selected.name.toUpperCase()} SELECTED — $${selected.price} USD`;
   chosen.textContent='Choose your secure payment method below.';
   checkout.classList.add('visible');
   checkout.scrollIntoView({behavior:'smooth',block:'nearest'});
 }));
 
-function startCheckout(method){
+async function startPayPalCheckout(){
   if(!selected)return;
-  const url=checkoutLinks[selected.price];
-  if(url){ window.location.href=url; return; }
-  alert(`${method} checkout for ${selected.name} ($${selected.price}) is ready to connect. Add the verified payment URL/API before publishing checkout.`);
+  paypalBtn.disabled=true;
+  paypalBtn.textContent='Opening PayPal…';
+  chosen.textContent='Creating your secure PayPal checkout…';
+  try{
+    const response=await fetch(CREATE_ORDER_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({packageId:selected.packageId})
+    });
+    const data=await response.json();
+    if(!response.ok || !data.orderId || !data.approveLink){
+      throw new Error(data.error || 'Unable to create PayPal checkout');
+    }
+    localStorage.setItem('splattPendingPayPal',JSON.stringify({
+      orderId:data.orderId,
+      packageId:selected.packageId,
+      packageName:selected.name,
+      amount:selected.price
+    }));
+    window.location.href=data.approveLink;
+  }catch(error){
+    console.error(error);
+    chosen.textContent='PayPal checkout could not be opened. Please try again.';
+    paypalBtn.disabled=false;
+    paypalBtn.textContent='PayPal';
+  }
 }
-document.getElementById('paypalBtn').addEventListener('click',()=>startCheckout('PayPal'));
-document.getElementById('cardBtn').addEventListener('click',()=>startCheckout('Card'));
-document.getElementById('appleBtn').addEventListener('click',()=>startCheckout('Apple Pay'));
 
+paypalBtn.addEventListener('click',startPayPalCheckout);
+cardBtn.addEventListener('click',()=>alert('Card checkout is the next payment method being connected.'));
+appleBtn.addEventListener('click',()=>alert('Apple Pay will appear once eligibility and checkout configuration are connected.'));
+
+async function finishReturnedPayPalPayment(){
+  const params=new URLSearchParams(window.location.search);
+  const returnedToken=params.get('token');
+  if(!returnedToken)return;
+
+  let pending=null;
+  try{ pending=JSON.parse(localStorage.getItem('splattPendingPayPal')||'null'); }catch(_e){}
+  if(!pending || pending.orderId!==returnedToken || !pending.packageId){
+    checkout.classList.add('visible');
+    checkoutTitle.textContent='PAYPAL RETURN RECEIVED';
+    chosen.textContent='We could not match this return to the checkout started on this device. Please contact SPLATT before retrying payment.';
+    return;
+  }
+
+  checkout.classList.add('visible');
+  checkoutTitle.textContent='VERIFYING PAYMENT…';
+  chosen.textContent='Please keep this page open while PayPal confirms your payment.';
+  paypalBtn.disabled=true; cardBtn.disabled=true; appleBtn.disabled=true;
+
+  try{
+    const response=await fetch(CAPTURE_ORDER_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({orderId:pending.orderId,packageId:pending.packageId})
+    });
+    const data=await response.json();
+    if(!response.ok || data.success!==true || data.paymentVerified!==true){
+      throw new Error(data.error || 'Payment verification failed');
+    }
+    localStorage.removeItem('splattPendingPayPal');
+    checkoutTitle.textContent='✓ PAYMENT VERIFIED';
+    chosen.textContent=`${data.packageName || pending.packageName} — $${data.amount || pending.amount} ${data.currency || 'USD'} successfully paid. Your questionnaire can now be unlocked.`;
+    paypalBtn.style.display='none'; cardBtn.style.display='none'; appleBtn.style.display='none';
+    history.replaceState({},document.title,window.location.pathname);
+    // IMPORTANT: questionnaire redirect/unlock goes here after its final URL is supplied.
+  }catch(error){
+    console.error(error);
+    checkoutTitle.textContent='PAYMENT VERIFICATION NEEDS ATTENTION';
+    chosen.textContent='PayPal returned successfully, but automatic verification did not complete. Please do not pay again.';
+  }
+}
+
+finishReturnedPayPalPayment();
 
 const addonCustomer=document.getElementById('addonCustomer');
 const addonCode=document.getElementById('addonCode');
