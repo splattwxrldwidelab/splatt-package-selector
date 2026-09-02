@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPLATT WXRLDWIDE — Creator Packages</title>
+<title>SPLATTW★RLDWIDE — Creator Packages</title>
 <style>
 :root{--pink:#ff2db2;--green:#39ff14;--blue:#4edcff;--bg:#050505}
 *{box-sizing:border-box} body{margin:0;background:#050505;color:#fff;font-family:Arial,Helvetica,sans-serif;min-height:100vh}
 body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;background:radial-gradient(circle at 20% 20%,rgba(255,45,178,.22),transparent 28%),radial-gradient(circle at 80% 15%,rgba(57,255,20,.16),transparent 28%),radial-gradient(circle at 90% 80%,rgba(78,220,255,.14),transparent 25%)}
 .wrapper{width:min(1500px,100%);margin:auto;padding:18px 14px 50px}
-.package-stage{position:relative;width:100%;line-height:0;isolation:isolate}
-.package-art{display:block;width:100%;height:auto;object-fit:contain;object-position:center;user-select:none;-webkit-user-drag:none}
+.package-stage{position:relative;width:100%;max-width:100%;display:block;line-height:0;overflow:hidden;isolation:isolate}
+.package-art{display:block;width:100%;max-width:100%;height:auto;object-fit:contain;object-position:center;vertical-align:top;user-select:none;-webkit-user-drag:none}
 .hotspot{position:absolute;top:3.20%;height:51.00%;border:2px solid transparent;border-radius:16px;background:transparent;cursor:pointer;transition:box-shadow .18s ease,background .18s ease,border-color .18s ease,filter .18s ease,transform .18s ease;z-index:3}
 .hotspot:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .hotspot.entry{left:0.95%;width:21.55%;--accent:var(--pink)}
@@ -21,8 +21,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
 .hotspot.selected{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 13%,transparent);box-shadow:0 0 14px var(--accent),0 0 35px var(--accent),inset 0 0 28px color-mix(in srgb,var(--accent) 28%,transparent);filter:brightness(1.16)}
 .hotspot.selected:after{content:"✓ SELECTED";position:absolute;left:50%;bottom:2%;transform:translateX(-50%);padding:9px 13px;border-radius:999px;background:#050505;color:var(--accent);border:1px solid var(--accent);font:bold 12px/1 Arial;white-space:nowrap;box-shadow:0 0 16px var(--accent)}
 .checkout{display:none;margin:20px auto 0;max-width:760px;padding:22px;border:1px solid rgba(255,255,255,.16);border-radius:18px;background:rgba(8,8,8,.94);text-align:center;box-shadow:0 0 30px rgba(255,45,178,.1)}
-.checkout.visible{display:block}.checkout h2{margin:0 0 8px;font-size:clamp(20px,4vw,30px)} .checkout .chosen{color:#ddd;margin-bottom:18px}.payment-row{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pay{border:1px solid #555;border-radius:12px;background:#111;color:#fff;padding:14px 10px;font-weight:900;cursor:pointer;transition:.18s}.pay:hover{border-color:var(--green);box-shadow:0 0 16px rgba(57,255,20,.35)}.pay[disabled]{opacity:.45;cursor:not-allowed}.note{font-size:12px;color:#aaa;margin:14px 0 0;line-height:1.5}
-@media(max-width:700px){.wrapper{padding:8px 4px 30px}.hotspot{top:3.20%;height:51.00%;border-radius:8px}.hotspot.selected:after{font-size:8px;padding:6px 7px}.payment-row{grid-template-columns:1fr}.checkout{margin:12px 6px 0}}
+.checkout.visible{display:block}.checkout h2{margin:0 0 8px;font-size:clamp(20px,4vw,30px)} .checkout .chosen{color:#ddd;margin-bottom:18px}.payment-row{display:grid;grid-template-columns:1fr;gap:10px}.pay{border:1px solid #555;border-radius:12px;background:#111;color:#fff;padding:14px 10px;font-weight:900;cursor:pointer;transition:.18s}.pay:hover{border-color:var(--green);box-shadow:0 0 16px rgba(57,255,20,.35)}.pay[disabled]{opacity:.45;cursor:not-allowed}.note{font-size:12px;color:#aaa;margin:14px 0 0;line-height:1.5}.terms-row{display:flex;align-items:flex-start;gap:10px;margin:0 0 18px;text-align:left;font-size:13px;color:#d9d9d9}.terms-row input{margin-top:2px;accent-color:var(--green)}.terms-link{background:none;border:0;padding:0;color:var(--green);font:inherit;text-decoration:underline;cursor:pointer}.terms-link:hover{filter:brightness(1.2)}.addon-panel{margin-top:18px;padding:14px 16px;border:1px solid rgba(57,255,20,.18);border-radius:12px;background:rgba(8,10,8,.75);text-align:left}.addon-header{font-weight:900;color:var(--green);margin:0 0 10px}.addon-toggle-row{display:flex;align-items:center;gap:8px;margin-bottom:10px}.addon-toggle-row input{accent-color:var(--green)}.addon-code-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}.addon-code-row input{flex:1;background:#111;color:#fff;border:1px solid #555;border-radius:9px;padding:10px 12px}.addon-code-row button{padding:10px 12px;border:1px solid var(--green);background:rgba(57,255,20,.08);color:var(--green);border-radius:9px;font-weight:800;cursor:pointer}.addon-status{font-size:12px;color:#bbb;line-height:1.5;margin-bottom:12px}.addon-shop{margin-top:10px;display:none}.addon-shop.visible{display:block}.addon-items{display:grid;gap:10px}.addon-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.02)}.addon-item-main{display:flex;align-items:center;gap:10px;flex:1}.addon-item-main input{accent-color:var(--green)}.addon-qty{display:none;align-items:center;gap:8px}.addon-item.selected .addon-qty{display:flex}.addon-qty button{width:26px;height:26px;border:1px solid #555;border-radius:8px;background:#111;color:#fff;cursor:pointer}.addon-qty span{min-width:24px;text-align:center;font-weight:700}.addon-summary{display:flex;justify-content:space-between;gap:18px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);font-size:12px;color:#ddd}.addon-summary strong{color:#fff}.addon-summary .warn{color:#ffb86c}.addon-summary .minimum{color:var(--green)}
+@media(max-width:700px){.wrapper{padding:8px 4px 30px}.hotspot{top:3.20%;height:51.00%;border-radius:8px}.hotspot.selected:after{font-size:8px;padding:6px 7px}.payment-row{grid-template-columns:1fr}.checkout{margin:12px 6px 0}.addon-code-row{flex-direction:column;align-items:stretch}.addon-item{flex-direction:column;align-items:flex-start}.addon-item-main{width:100%}.addon-summary{flex-direction:column;align-items:flex-start}.}
 
 .overlay-control{position:absolute;z-index:8;font-family:Arial,Helvetica,sans-serif}
 .addon-check{left:7.38%;top:62.15%;width:1.45%;height:2.45%;accent-color:var(--pink);cursor:pointer;margin:0}
@@ -33,24 +33,24 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
 .unlock-btn{left:23.70%;top:65.05%;width:11.95%;height:4.55%;color:var(--pink);background:rgba(255,45,178,.06)}
 .request-btn{left:56.35%;top:65.40%;width:9.30%;height:4.40%;color:var(--green);background:rgba(57,255,20,.06)}
 .shop-btn{left:87.30%;top:65.35%;width:10.10%;height:4.45%;color:var(--pink);background:rgba(255,45,178,.06)}
-.modal{position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:18px;background:rgba(0,0,0,.82)}.modal.open{display:grid}.modal-card{width:min(620px,100%);max-height:90vh;overflow:auto;background:#090909;border:1px solid var(--green);border-radius:18px;padding:22px;box-shadow:0 0 34px rgba(57,255,20,.25)}.modal-card h2{margin-top:0;color:var(--green)}.form-grid{display:grid;gap:12px}.form-grid input,.form-grid textarea,.form-grid select{width:100%;background:#111;color:#fff;border:1px solid #555;border-radius:9px;padding:12px}.form-grid textarea{min-height:120px;resize:vertical}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}.modal-actions button{padding:11px 16px;border-radius:9px;border:1px solid #666;background:#151515;color:#fff;cursor:pointer}.modal-actions .primary{border-color:var(--green);color:var(--green)}
+.modal{position:fixed;inset:0;z-index:50;display:none;place-items:center;padding:18px;background:rgba(0,0,0,.82)}.modal.open{display:grid}.modal-card{width:min(620px,100%);max-height:90vh;overflow:auto;background:#090909;border:1px solid var(--green);border-radius:18px;padding:22px;box-shadow:0 0 34px rgba(57,255,20,.25)}.modal-card h2{margin-top:0;color:var(--green)}.modal-card p,.modal-card li{color:#ddd;line-height:1.6}.modal-card ul{padding-left:18px}.form-grid{display:grid;gap:12px}.form-grid input,.form-grid textarea,.form-grid select{width:100%;background:#111;color:#fff;border:1px solid #555;border-radius:9px;padding:12px}.form-grid textarea{min-height:120px;resize:vertical}.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}.modal-actions button{padding:11px 16px;border-radius:9px;border:1px solid #666;background:#151515;color:#fff;cursor:pointer}.modal-actions .primary{border-color:var(--green);color:var(--green)}
 @media(max-width:700px){.addon-code{font-size:5px;padding:0 3px}.overlay-btn{font-size:0}.addon-check{min-width:10px;min-height:10px}}
 
-.card-modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px}.card-modal.open{display:flex}.card-box{width:min(460px,100%);background:#090b0b;border:2px solid #39ff88;border-radius:18px;padding:22px;box-shadow:0 0 30px rgba(57,255,136,.25)}.card-box h2{margin:0 0 8px}.card-box p{opacity:.8}.card-field{height:52px;background:white;border-radius:9px;margin:12px 0;overflow:hidden}.card-actions{display:flex;gap:10px;margin-top:14px}.card-actions button{flex:1;padding:13px;border-radius:10px;border:0;font-weight:800;cursor:pointer}.card-actions .primary{background:#39ff88;color:#041108}.verified-link{display:inline-block;margin-top:14px;padding:14px 20px;border-radius:12px;background:#39ff88;color:#041108;text-decoration:none;font-weight:900}.pay:disabled{opacity:.48;cursor:not-allowed}
+.verified-link{display:inline-block;margin-top:14px;padding:14px 20px;border-radius:12px;background:#39ff88;color:#041108;text-decoration:none;font-weight:900}.pay:disabled{opacity:.48;cursor:not-allowed}.legal-panel{margin:30px auto 0;max-width:980px;padding:20px 18px;border:1px solid rgba(255,255,255,.12);border-radius:18px;background:rgba(12,12,12,.94);box-shadow:0 0 22px rgba(78,220,255,.08)}.legal-panel h2{margin:0 0 16px;font-size:clamp(22px,4vw,30px);color:var(--green)}.legal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.legal-card{padding:16px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.02)}.legal-card h3{margin:0 0 10px;font-size:16px;color:#fff}.legal-card p,.legal-card li{font-size:13px;line-height:1.7;color:#d9d9d9}.legal-card ul{margin:0;padding-left:18px}.legal-card a,.inline-link{color:var(--green);text-decoration:underline;background:none;border:0;padding:0;font:inherit;cursor:pointer}.legal-card a:hover,.inline-link:hover{filter:brightness(1.2)}.owner-decisions{margin-top:16px;padding:12px 14px;border-left:3px solid var(--pink);background:rgba(255,45,178,.06);border-radius:0 10px 10px 0}.owner-decisions h3{margin:0 0 8px;color:var(--pink)}.owner-decisions ul{margin:0;padding-left:18px}.site-footer{max-width:980px;margin:18px auto 0;padding:12px 10px 40px;text-align:center;color:#bfbfbf;font-size:12px}.site-footer a,.site-footer button{color:#d9d9d9;text-decoration:none;background:none;border:0;padding:0;margin:0 6px;font:inherit;cursor:pointer}.site-footer a:hover,.site-footer button:hover{color:var(--green)}
 </style>
 </head>
 <body>
 <main class="wrapper">
   <section class="package-stage" aria-label="SPLATT creator packages">
-    <img class="package-art" src="assets/creator-packages.png" alt="SPLATT WXRLDWIDE Creator Packages">
+    <img class="package-art" src="assets/creator-packages.png" alt="SPLATTW★RLDWIDE Creator Packages">
     <button class="hotspot entry" data-name="Entry Level" data-price="150" aria-label="Select Entry Level package for 150 US dollars"></button>
     <button class="hotspot medium" data-name="Medium Influencer" data-price="180" aria-label="Select Medium Influencer package for 180 US dollars"></button>
     <button class="hotspot creator" data-name="Content Creator" data-price="220" aria-label="Select Content Creator package for 220 US dollars"></button>
     <button class="hotspot diamond" data-name="Diamond Package" data-price="310" aria-label="Select Diamond package for 310 US dollars"></button>
 
-    <input class="overlay-control addon-check" id="addonCustomer" type="checkbox" aria-label="I am an existing SPLATT customer">
-    <input class="overlay-control addon-code" id="addonCode" type="text" placeholder="ENTER CODE" aria-label="SPLATT customer code">
-    <button class="overlay-control overlay-btn unlock-btn" id="unlockAddons" aria-label="Unlock add-ons"></button>
+    <input class="overlay-control addon-check" id="overlayCustomer" type="checkbox" aria-label="I am an existing SPLATT customer">
+    <input class="overlay-control addon-code" id="overlayCode" type="text" placeholder="ENTER CODE" aria-label="SPLATT customer code">
+    <button class="overlay-control overlay-btn unlock-btn" id="overlayUnlockAddons" aria-label="Unlock add-ons"></button>
     <button class="overlay-control overlay-btn request-btn" id="customRequest" aria-label="Submit a custom request"></button>
     <button class="overlay-control overlay-btn shop-btn" id="shopAddons" aria-label="Shop add-ons"></button>
   </section>
@@ -58,22 +58,151 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
   <section class="checkout" id="checkout" aria-live="polite">
     <h2 id="checkoutTitle">SELECT A PACKAGE</h2>
     <div class="chosen" id="chosen"></div>
+
+    <label class="terms-row" for="termsCheckbox">
+      <input id="termsCheckbox" type="checkbox">
+      <span>I have read and agree to the <button type="button" class="terms-link" id="termsLink">Terms &amp; Conditions</button>.</span>
+    </label>
+
     <div class="payment-row">
-      <button class="pay" id="paypalBtn">PayPal</button>
-      <button class="pay" id="cardBtn">Card</button>
-      <button class="pay" id="appleBtn">Apple Pay</button>
+      <button class="pay" id="paypalBtn" type="button" disabled>PayPal</button>
     </div>
-    <p class="note">Secure payment opens after package selection. The questionnaire should be shown only after a verified successful payment.</p>
+
+    <div class="addon-panel" id="addonModePanel" aria-live="polite">
+      <p class="addon-header">RETURNING CUSTOMER ADD-ON MODE</p>
+      <label class="addon-toggle-row" for="addonCustomerToggle">
+        <input id="addonCustomerToggle" type="checkbox">
+        <span>Returning customer</span>
+      </label>
+
+      <div class="addon-code-row">
+        <input id="addonCodeInput" type="text" placeholder="ENTER SPLATT ACCESS CODE" aria-label="Enter SPLATT access code">
+        <button id="addonUnlockButton" type="button">Validate code</button>
+      </div>
+
+      <div class="addon-status" id="addonStatus">
+        Access codes are validated server-side. Codes are reserved when used and only consumed after a successfully verified Add-On purchase.
+      </div>
+
+      <div class="addon-shop" id="addonShop">
+        <div class="addon-items" id="addonItems">
+          <label class="addon-item" data-addon-id="emoji">
+            <span class="addon-item-main"><input type="checkbox" class="addon-toggle" data-addon-id="emoji">Static emoji packs</span>
+            <span class="addon-qty"><button type="button" class="qty-btn" data-action="decrement" data-addon-id="emoji">&#8249;</button><span class="qty-value" data-addon-id="emoji">1</span><button type="button" class="qty-btn" data-action="increment" data-addon-id="emoji">&#8250;</button></span>
+          </label>
+          <label class="addon-item" data-addon-id="gif">
+            <span class="addon-item-main"><input type="checkbox" class="addon-toggle" data-addon-id="gif">GIF / moving emote packs</span>
+            <span class="addon-qty"><button type="button" class="qty-btn" data-action="decrement" data-addon-id="gif">&#8249;</button><span class="qty-value" data-addon-id="gif">1</span><button type="button" class="qty-btn" data-action="increment" data-addon-id="gif">&#8250;</button></span>
+          </label>
+          <label class="addon-item" data-addon-id="watermark">
+            <span class="addon-item-main"><input type="checkbox" class="addon-toggle" data-addon-id="watermark">Watermarks</span>
+            <span class="addon-qty"><button type="button" class="qty-btn" data-action="decrement" data-addon-id="watermark">&#8249;</button><span class="qty-value" data-addon-id="watermark">1</span><button type="button" class="qty-btn" data-action="increment" data-addon-id="watermark">&#8250;</button></span>
+          </label>
+          <label class="addon-item" data-addon-id="profile-banner">
+            <span class="addon-item-main"><input type="checkbox" class="addon-toggle" data-addon-id="profile-banner">Profile banners</span>
+            <span class="addon-qty"><button type="button" class="qty-btn" data-action="decrement" data-addon-id="profile-banner">&#8249;</button><span class="qty-value" data-addon-id="profile-banner">1</span><button type="button" class="qty-btn" data-action="increment" data-addon-id="profile-banner">&#8250;</button></span>
+          </label>
+          <label class="addon-item" data-addon-id="offline-banner">
+            <span class="addon-item-main"><input type="checkbox" class="addon-toggle" data-addon-id="offline-banner">Offline banners</span>
+            <span class="addon-qty"><button type="button" class="qty-btn" data-action="decrement" data-addon-id="offline-banner">&#8249;</button><span class="qty-value" data-addon-id="offline-banner">1</span><button type="button" class="qty-btn" data-action="increment" data-addon-id="offline-banner">&#8250;</button></span>
+          </label>
+          <label class="addon-item" data-addon-id="alert">
+            <span class="addon-item-main"><input type="checkbox" class="addon-toggle" data-addon-id="alert">Stream alerts</span>
+            <span class="addon-qty"><button type="button" class="qty-btn" data-action="decrement" data-addon-id="alert">&#8249;</button><span class="qty-value" data-addon-id="alert">1</span><button type="button" class="qty-btn" data-action="increment" data-addon-id="alert">&#8250;</button></span>
+          </label>
+        </div>
+
+        <div class="addon-summary">
+          <span>Add-On cart total: <strong id="addonTotalDisplay">$0.00</strong></span>
+          <span id="addonMinimumDisplay" class="minimum">Minimum order: $0.00</span>
+        </div>
+      </div>
+    </div>
+
+    <p class="note">Secure payment opens after package selection and customer acceptance of the Terms &amp; Conditions. The questionnaire unlocks only after payment verification succeeds.</p>
+  </section>
+
+  <section class="legal-panel" id="legalPolicies" aria-labelledby="legalPoliciesTitle">
+    <h2 id="legalPoliciesTitle">LEGAL &amp; POLICIES</h2>
+    <div class="legal-grid">
+      <article class="legal-card">
+        <h3>Terms &amp; Conditions</h3>
+        <p>SPLATTW★RLDWIDE provides digital media, design and creator-support services based on the package, brief, instructions and scope confirmed with the customer. These terms are the terms the customer agrees to before checkout. <button type="button" class="inline-link" data-open-terms="true">Read the Terms &amp; Conditions.</button></p>
+      </article>
+
+      <article class="legal-card">
+        <h3>Privacy</h3>
+        <p>We collect the information required to respond to enquiries, process purchases, verify payments, review design briefs and deliver requested services. This may include contact details, creative brief information, account references, payment verification data and any project materials supplied by the customer.</p>
+        <p>That information is used to communicate with the customer, complete and verify transactions, manage service delivery and maintain operational records. We do not need to store full card details ourselves when payments are processed through a third-party payment provider.</p>
+      </article>
+
+      <article class="legal-card">
+        <h3>Customer-Supplied Content &amp; Rights</h3>
+        <p>Customers confirm they have the necessary rights, licences or permission to supply logos, photographs, videos, names, artwork, brand assets and other materials for use in design work. We may rely on customer-supplied information, but the customer remains responsible for ensuring that the content is lawful and approved for use.</p>
+      </article>
+
+      <article class="legal-card">
+        <h3>Platform Responsibility</h3>
+        <p>Customers remain responsible for their own social-media, streaming and platform accounts and for complying with the rules and policies of the platforms they use. This includes account security, content choices, platform behaviour and any platform-specific restrictions or requirements.</p>
+      </article>
+
+      <article class="legal-card">
+        <h3>Results Disclaimer</h3>
+        <p>We do not guarantee followers, views, engagement, monetisation, platform eligibility, account growth or other performance outcomes. Any outcomes depend on the customer’s content, platform behaviour, audience, market conditions and third-party platform rules.</p>
+      </article>
+
+      <article class="legal-card">
+        <h3>Platform Enforcement</h3>
+        <p>To the maximum extent permitted by applicable law, we are not responsible for strikes, restrictions, demonetisation, suspensions, removals or similar platform actions resulting from customer content, instructions, conduct, supplied materials or use of delivered work.</p>
+      </article>
+
+      <article class="legal-card">
+        <h3>Service Standard</h3>
+        <p>We remain responsible for providing our services with reasonable care and skill. These terms do not attempt to exclude rights that legally cannot be excluded, and any applicable consumer protections remain in place.</p>
+      </article>
+
+      <article class="legal-card">
+        <h3>Payments &amp; Security</h3>
+        <p>Payments are processed using the available third-party payment provider. We do not need to store a customer’s full payment-card details ourselves, and payment verification is handled through the approved provider’s secure process.</p>
+      </article>
+
+      <article class="legal-card">
+        <h3>Intellectual Property / Delivered Designs</h3>
+        <p>Any intellectual property, design ownership, commercial-use permissions, licensing or copyright-transfer arrangements for delivered designs and work products must be clearly agreed in writing before they are relied upon.</p>
+      </article>
+
+      <article class="legal-card">
+        <h3>Contact / Legal Enquiries</h3>
+        <p>For legal, commercial or service enquiries, please use the customer-facing contact details published by the business. We are committed to clear communication and will respond through the approved channels.</p>
+      </article>
+    </div>
   </section>
 </main>
-<div class="card-modal" id="cardModal" role="dialog" aria-modal="true" aria-labelledby="cardTitle">
-  <div class="card-box">
-    <h2 id="cardTitle">SECURE CARD PAYMENT</h2>
-    <p id="cardStatus">Enter your card details below. Card fields are securely hosted by PayPal.</p>
-    <div class="card-field" id="paypal-card-fields-number"></div>
-    <div class="card-field" id="paypal-card-fields-expiry"></div>
-    <div class="card-field" id="paypal-card-fields-cvv"></div>
-    <div class="card-actions"><button type="button" id="closeCard">Cancel</button><button class="primary" type="button" id="submitCard">Pay securely</button></div>
+
+<footer class="site-footer" aria-label="Footer policy links">
+  <nav>
+    <button type="button" data-open-terms="true">Terms &amp; Conditions</button> |
+    <button type="button" data-open-policy="privacy">Privacy</button> |
+    <button type="button" data-open-policy="legal">Legal &amp; Policies</button>
+  </nav>
+</footer>
+
+<div class="modal" id="termsModal" role="dialog" aria-modal="true" aria-labelledby="termsTitle">
+  <div class="modal-card">
+    <h2 id="termsTitle">TERMS &amp; CONDITIONS</h2>
+    <p>SPLATT provides digital media and design services based on information, content and instructions supplied by the customer.</p>
+    <ul>
+      <li>The customer is responsible for having permission and rights to any materials they provide.</li>
+      <li>The customer is responsible for their social and platform accounts and compliance with platform policies.</li>
+      <li>SPLATT does not guarantee followers, views, engagement, monetisation, platform eligibility or other performance results.</li>
+      <li>SPLATT is not responsible for platform moderation, strikes, restrictions, demonetisation, suspensions or removals caused by customer content, instructions, conduct, supplied material or use of delivered work, to the maximum extent permitted by law.</li>
+      <li>SPLATT remains responsible for providing its services with reasonable care and skill.</li>
+      <li>Nothing in these terms attempts to exclude rights that legally cannot be excluded.</li>
+    </ul>
+    <div class="modal-actions">
+      <button type="button" id="declineTerms">Close</button>
+      <button type="button" class="primary" id="acceptTerms">I agree</button>
+    </div>
   </div>
 </div>
 
@@ -91,30 +220,76 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.2;bac
   </div>
 </div>
 
-<script async src="https://www.sandbox.paypal.com/web-sdk/v6/core" onload="onPayPalWebSdkLoaded()"></script>
 <script>
 const hotspots=[...document.querySelectorAll('.hotspot')];
 const checkout=document.getElementById('checkout');
 const checkoutTitle=document.getElementById('checkoutTitle');
 const chosen=document.getElementById('chosen');
 const paypalBtn=document.getElementById('paypalBtn');
-const cardBtn=document.getElementById('cardBtn');
-const appleBtn=document.getElementById('appleBtn');
+const termsCheckbox=document.getElementById('termsCheckbox');
+const termsModal=document.getElementById('termsModal');
+const termsLink=document.getElementById('termsLink');
+const acceptTerms=document.getElementById('acceptTerms');
+const declineTerms=document.getElementById('declineTerms');
+const addonCustomer=document.getElementById('addonCustomerToggle');
+const addonCode=document.getElementById('addonCodeInput');
+const addonStatus=document.getElementById('addonStatus');
+const addonShop=document.getElementById('addonShop');
+const addonTotalDisplay=document.getElementById('addonTotalDisplay');
+const addonMinimumDisplay=document.getElementById('addonMinimumDisplay');
+const addonUnlockButton=document.getElementById('addonUnlockButton');
+const ADDON_CONFIG={
+  minimumOrderValue:0,
+  items:{
+    emoji:{label:'Static emoji packs', unitPrice:0, quantity:1},
+    gif:{label:'GIF / moving emote packs', unitPrice:0, quantity:1},
+    watermark:{label:'Watermarks', unitPrice:0, quantity:1},
+    'profile-banner':{label:'Profile banners', unitPrice:0, quantity:1},
+    'offline-banner':{label:'Offline banners', unitPrice:0, quantity:1},
+    alert:{label:'Stream alerts', unitPrice:0, quantity:1}
+  }
+};
 
 const CREATE_ORDER_URL='https://ulsfycyfhxdkgatxqavh.supabase.co/functions/v1/quick-handler';
 const CAPTURE_ORDER_URL='https://ulsfycyfhxdkgatxqavh.supabase.co/functions/v1/smart-function';
-const CLIENT_TOKEN_URL='https://ulsfycyfhxdkgatxqavh.supabase.co/functions/v1/smart-handler';
 const QUESTIONNAIRE_URL='https://docs.google.com/forms/d/e/1FAIpQLSd8ssAq_JoZcySZN1L4x1XO_-Oq-N8aNHSwJ14tY7odZrEcBw/viewform';
-let cardSession=null;
-
-const packageIds={
-  '150':'entry',
-  '180':'medium',
-  '220':'creator',
-  '310':'diamond'
-};
-
+const packageIds={'150':'entry','180':'medium','220':'creator','310':'diamond'};
 let selected=null;
+
+function refreshTermsState(){
+  paypalBtn.disabled = !(selected && termsCheckbox.checked);
+  paypalBtn.textContent = selected && termsCheckbox.checked ? 'PayPal' : 'Accept terms to continue';
+}
+
+function openTerms(){
+  termsModal.classList.add('open');
+}
+
+function closeTerms(){
+  termsModal.classList.remove('open');
+}
+
+termsLink.addEventListener('click',openTerms);
+document.querySelectorAll('[data-open-terms="true"]').forEach(button => button.addEventListener('click', openTerms));
+acceptTerms.addEventListener('click',()=>{
+  termsCheckbox.checked=true;
+  closeTerms();
+  refreshTermsState();
+});
+declineTerms.addEventListener('click',()=>{
+  termsCheckbox.checked=false;
+  closeTerms();
+  refreshTermsState();
+});
+termsModal.addEventListener('click',event=>{ if(event.target===termsModal) closeTerms(); });
+termsCheckbox.addEventListener('change',refreshTermsState);
+document.querySelectorAll('[data-open-policy]').forEach(button=>{
+  button.addEventListener('click',()=>{
+    const section=document.getElementById('legalPolicies');
+    if(!section) return;
+    section.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+});
 
 hotspots.forEach(zone=>zone.addEventListener('click',()=>{
   hotspots.forEach(x=>x.classList.remove('selected'));
@@ -124,89 +299,123 @@ hotspots.forEach(zone=>zone.addEventListener('click',()=>{
   chosen.textContent='Choose your secure payment method below.';
   checkout.classList.add('visible');
   checkout.scrollIntoView({behavior:'smooth',block:'nearest'});
+  refreshTermsState();
 }));
 
 async function startPayPalCheckout(){
-  if(!selected)return;
+  if(!selected || !termsCheckbox.checked) return;
   paypalBtn.disabled=true;
   paypalBtn.textContent='Opening PayPal…';
   chosen.textContent='Creating your secure PayPal checkout…';
   try{
-    const response=await fetch(CREATE_ORDER_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({packageId:selected.packageId,paymentMethod:'paypal'})
-    });
+    const response=await fetch(CREATE_ORDER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({packageId:selected.packageId,paymentMethod:'paypal'})});
     const data=await response.json();
-    if(!response.ok || !data.orderId || !data.approveLink){
-      throw new Error(data.error || 'Unable to create PayPal checkout');
-    }
-    localStorage.setItem('splattPendingPayPal',JSON.stringify({
-      orderId:data.orderId,
-      packageId:selected.packageId,
-      packageName:selected.name,
-      amount:selected.price
-    }));
+    if(!response.ok || !data.orderId || !data.approveLink){ throw new Error(data.error || 'Unable to create PayPal checkout'); }
+    localStorage.setItem('splattPendingPayPal',JSON.stringify({orderId:data.orderId,packageId:selected.packageId,packageName:selected.name,amount:selected.price}));
     window.location.href=data.approveLink;
   }catch(error){
     console.error(error);
     chosen.textContent='PayPal checkout could not be opened. Please try again.';
-    paypalBtn.disabled=false;
-    paypalBtn.textContent='PayPal';
+    refreshTermsState();
   }
 }
 
 paypalBtn.addEventListener('click',startPayPalCheckout);
-const cardModal=document.getElementById('cardModal');
-const cardStatus=document.getElementById('cardStatus');
-const submitCard=document.getElementById('submitCard');
-document.getElementById('closeCard').addEventListener('click',()=>cardModal.classList.remove('open'));
 
-async function onPayPalWebSdkLoaded(){
-  try{
-    const r=await fetch(CLIENT_TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
-    const t=await r.json();
-    if(!r.ok || !t.clientToken) throw new Error(t.error||'Client token unavailable');
-    const sdk=await window.paypal.createInstance({clientToken:t.clientToken,components:['card-fields']});
-    const eligible=await sdk.findEligibleMethods({currencyCode:'USD'});
-    if(eligible && typeof eligible.isEligible==='function' && !eligible.isEligible('advanced_cards')){
-      cardBtn.disabled=true; cardBtn.title='Card checkout is not eligible for this PayPal account/session'; return;
-    }
-    cardSession=sdk.createCardFieldsOneTimePaymentSession();
-    document.querySelector('#paypal-card-fields-number').appendChild(cardSession.createCardFieldsComponent({type:'number',placeholder:'Card number'}));
-    document.querySelector('#paypal-card-fields-expiry').appendChild(cardSession.createCardFieldsComponent({type:'expiry',placeholder:'MM/YY'}));
-    document.querySelector('#paypal-card-fields-cvv').appendChild(cardSession.createCardFieldsComponent({type:'cvv',placeholder:'CVV'}));
-  }catch(e){console.error(e);cardBtn.disabled=true;cardBtn.title='Card checkout could not initialize';}
+function formatCurrency(value){
+  return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Number(value || 0));
 }
 
-cardBtn.addEventListener('click',()=>{
-  if(!selected)return;
-  if(!cardSession){chosen.textContent='Secure card checkout is not available in this session.';return;}
-  cardStatus.textContent=`${selected.name} — $${selected.price} USD`;
-  cardModal.classList.add('open');
+function getSelectedAddonPrice(){
+  let total=0;
+  const toggles=[...document.querySelectorAll('.addon-toggle')];
+  toggles.forEach(toggle=>{
+    if(toggle.checked){
+      const addonId=toggle.dataset.addonId;
+      const item=ADDON_CONFIG.items[addonId];
+      if(item && item.unitPrice){
+        total += Number(item.unitPrice) * Number(item.quantity || 1);
+      }
+    }
+  });
+  return total;
+}
+
+function updateAddonCart(){
+  const total=getSelectedAddonPrice();
+  addonTotalDisplay.textContent=formatCurrency(total);
+  addonMinimumDisplay.textContent=`Minimum order: ${formatCurrency(ADDON_CONFIG.minimumOrderValue)}`;
+  addonMinimumDisplay.classList.toggle('warn', total < ADDON_CONFIG.minimumOrderValue);
+}
+
+function syncAddonAccess(){
+  const codeValue=addonCode.value.trim();
+  const enabled=addonCustomer.checked;
+  addonShop.classList.toggle('visible', enabled && !!codeValue);
+  if(!enabled){
+    addonStatus.textContent='Returning-customer Add-On mode is only available for validated SPLATT access codes.';
+    addonShop.classList.remove('visible');
+    return;
+  }
+  if(!codeValue){
+    addonStatus.textContent='Enter a one-time SPLATT access code to unlock the Add-On shop.';
+    addonShop.classList.remove('visible');
+    return;
+  }
+  addonStatus.textContent='Code reserved for validation; actual code consumption and server-side validation happen only after a verified Add-On purchase.';
+  addonShop.classList.add('visible');
+}
+
+addonCustomer.addEventListener('change',syncAddonAccess);
+addonCode.addEventListener('input',syncAddonAccess);
+
+addonUnlockButton.addEventListener('click',async()=>{
+  if(!addonCustomer.checked){
+    addonStatus.textContent='Please confirm the returning-customer checkbox before validating a SPLATT access code.';
+    return;
+  }
+  const trimmed=addonCode.value.trim();
+  if(!trimmed){
+    addonCode.focus();
+    addonStatus.textContent='Enter the access code before validation.';
+    return;
+  }
+  addonStatus.textContent='Server-side validation is required. This front-end only reserves the entered code for a verified purchase flow and does not consume it prematurely.';
+  syncAddonAccess();
 });
 
-submitCard.addEventListener('click',async()=>{
-  if(!selected||!cardSession)return;
-  submitCard.disabled=true; cardStatus.textContent='Processing secure card payment…';
-  try{
-    const r=await fetch(CREATE_ORDER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({packageId:selected.packageId,paymentMethod:'card'})});
-    const order=await r.json();
-    if(!r.ok||!order.orderId)throw new Error(order.error||'Unable to create order');
-    const result=await cardSession.submit(order.orderId);
-    if(result.state!=='succeeded')throw new Error(result.data?.message||`Card payment ${result.state||'failed'}`);
-    const cr=await fetch(CAPTURE_ORDER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:order.orderId,packageId:selected.packageId})});
-    const data=await cr.json();
-    if(!cr.ok||data.success!==true||data.paymentVerified!==true)throw new Error(data.error||'Payment verification failed');
-    cardModal.classList.remove('open');
-    showVerifiedPayment(data,selected);
-  }catch(e){console.error(e);cardStatus.textContent='Card payment did not complete. You have not been verified as paid. Please check the details or try another method.';}
-  finally{submitCard.disabled=false;}
+document.querySelectorAll('.addon-toggle').forEach(toggle=>{
+  toggle.addEventListener('change',event=>{
+    const target=event.currentTarget;
+    const item=target.closest('.addon-item');
+    if(!item) return;
+    item.classList.toggle('selected', target.checked);
+    updateAddonCart();
+    const total=getSelectedAddonPrice();
+    if(total < ADDON_CONFIG.minimumOrderValue){
+      addonStatus.textContent='Add-On order is below the configured minimum value. Increase quantity or wait for the server-side minimum to be configured.';
+    } else {
+      addonStatus.textContent='Add-On order is within the configured minimum. Final pricing and validation remain server-side.';
+    }
+  });
 });
 
-appleBtn.addEventListener('click',()=>{
-  chosen.textContent='Apple Pay is not being offered in this checkout yet because PayPal Apple Pay eligibility depends on the merchant account country and customer device. Use PayPal or Card.';
+document.querySelectorAll('.qty-btn').forEach(button=>{
+  button.addEventListener('click',()=>{
+    const addonId=button.dataset.addonId;
+    const item=ADDON_CONFIG.items[addonId];
+    if(!item) return;
+    const delta=button.dataset.action==='increment' ? 1 : -1;
+    const currentValue=Number(item.quantity || 1);
+    const nextValue=Math.max(1,currentValue + delta);
+    item.quantity=nextValue;
+    const qtyTarget=document.querySelector(`.qty-value[data-addon-id="${addonId}"]`);
+    if(qtyTarget){ qtyTarget.textContent=String(nextValue); }
+    updateAddonCart();
+  });
 });
+
+updateAddonCart();
 
 function showVerifiedPayment(data,pending){
   localStorage.removeItem('splattPendingPayPal');
@@ -218,7 +427,7 @@ function showVerifiedPayment(data,pending){
   const link=document.createElement('a');
   link.className='verified-link'; link.href=QUESTIONNAIRE_URL; link.target='_blank'; link.rel='noopener'; link.textContent='OPEN DESIGN QUESTIONNAIRE';
   chosen.append(msg,link);
-  paypalBtn.style.display='none';cardBtn.style.display='none';appleBtn.style.display='none';
+  paypalBtn.style.display='none';
   history.replaceState({},document.title,window.location.pathname);
 }
 
@@ -229,7 +438,7 @@ async function finishReturnedPayPalPayment(){
 
   let pending=null;
   try{ pending=JSON.parse(localStorage.getItem('splattPendingPayPal')||'null'); }catch(_e){}
-  if(!pending || pending.orderId!==returnedToken || !pending.packageId){
+  if(!pending || !pending.orderId || !pending.packageId){
     checkout.classList.add('visible');
     checkoutTitle.textContent='PAYPAL RETURN RECEIVED';
     chosen.textContent='We could not match this return to the checkout started on this device. Please contact SPLATT before retrying payment.';
@@ -239,14 +448,10 @@ async function finishReturnedPayPalPayment(){
   checkout.classList.add('visible');
   checkoutTitle.textContent='VERIFYING PAYMENT…';
   chosen.textContent='Please keep this page open while PayPal confirms your payment.';
-  paypalBtn.disabled=true; cardBtn.disabled=true; appleBtn.disabled=true;
+  paypalBtn.disabled=true;
 
   try{
-    const response=await fetch(CAPTURE_ORDER_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({orderId:pending.orderId,packageId:pending.packageId})
-    });
+    const response=await fetch(CAPTURE_ORDER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:pending.orderId,packageId:pending.packageId})});
     const data=await response.json();
     if(!response.ok || data.success!==true || data.paymentVerified!==true){
       throw new Error(data.error || 'Payment verification failed');
@@ -261,13 +466,6 @@ async function finishReturnedPayPalPayment(){
 
 finishReturnedPayPalPayment();
 
-const addonCustomer=document.getElementById('addonCustomer');
-const addonCode=document.getElementById('addonCode');
-document.getElementById('unlockAddons').addEventListener('click',()=>{
-  if(!addonCustomer.checked){alert('Please confirm you are an existing SPLATT customer.');return;}
-  if(!addonCode.value.trim()){addonCode.focus();alert('Enter your SPLATT customer code to unlock Add-On Mode.');return;}
-  alert('Customer-code verification will activate once the secure customer database is connected. Your code has not been accepted or charged yet.');
-});
 const modal=document.getElementById('requestModal');
 document.getElementById('customRequest').addEventListener('click',()=>modal.classList.add('open'));
 document.getElementById('closeRequest').addEventListener('click',()=>modal.classList.remove('open'));
@@ -277,6 +475,7 @@ document.getElementById('shopAddons').addEventListener('click',()=>{
   if(!addonCustomer.checked || !addonCode.value.trim()){alert('Add-On Store is for existing SPLATT customers. Tick the customer box and enter your customer code first.');addonCode.focus();return;}
   alert('Add-On Store access will open here after customer-code verification is connected.');
 });
+refreshTermsState();
 </script>
 </body>
 </html>
