@@ -416,10 +416,59 @@ const modal=document.getElementById('requestModal');
 document.getElementById('customRequest').addEventListener('click',()=>modal.classList.add('open'));
 document.getElementById('closeRequest').addEventListener('click',()=>modal.classList.remove('open'));
 modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});
-document.getElementById('requestForm').addEventListener('submit',e=>{e.preventDefault();alert('Your custom request form is ready. The next step is connecting its secure submission destination.');});
-document.getElementById('shopAddons').addEventListener('click',()=>{
+document.getElementById('requestForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const form=e.currentTarget;
+  const payload={
+    type:'custom_request',
+    sourcePage:'index.html',
+    name:form.elements.name.value.trim(),
+    email:form.elements.email.value.trim(),
+    requestType:form.elements.type.value,
+    details:form.elements.details.value.trim(),
+    reference:form.elements.reference.value.trim(),
+    message:form.elements.details.value.trim()
+  };
+  if(!payload.name || !payload.email || !payload.details){
+    alert('Please complete the required fields before submitting your request.');
+    return;
+  }
+  try{
+    const response=await fetch('https://ulsfycyfhxdkgatxqavh.supabase.co/functions/v1/submit-website-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await response.json();
+    if(!response.ok || !data.ok){ throw new Error(data.error || 'Submission failed.'); }
+    form.reset();
+    modal.classList.remove('open');
+    alert('Your custom request has been accepted and sent to the SPLATTW★RLDWIDE admin inbox.');
+  }catch(error){
+    console.error(error);
+    alert('Your request could not be submitted right now. Please try again shortly or use the approved customer contact information.');
+  }
+});
+document.getElementById('shopAddons').addEventListener('click',async()=>{
   if(!addonCustomer.checked || !addonCode.value.trim()){alert('Add-On Store is for existing SPLATT customers. Tick the customer box and enter your customer code first.');addonCode.focus();return;}
-  alert('Add-On Store access will open here after customer-code verification is connected.');
+  const payload={
+    type:'addon_request',
+    sourcePage:'index.html',
+    customer_name:'Returning customer',
+    email:'',
+    message:`Add-On request from returning customer. Access code: ${addonCode.value.trim()}`,
+    metadata:{
+      addonRequest: true,
+      accessCode: addonCode.value.trim(),
+      selectedAddons: [...document.querySelectorAll('.addon-toggle:checked')].map(item => item.dataset.addonId),
+      quantities: Object.fromEntries([...document.querySelectorAll('.qty-value')].map(node => [node.dataset.addonId, Number(node.textContent || '1')]))
+    }
+  };
+  try{
+    const response=await fetch('https://ulsfycyfhxdkgatxqavh.supabase.co/functions/v1/submit-website-request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await response.json();
+    if(!response.ok || !data.ok){ throw new Error(data.error || 'Add-On request failed.'); }
+    alert('Your Add-On request has been accepted and queued for the approved admin inbox.');
+  }catch(error){
+    console.error(error);
+    alert('The Add-On request could not be submitted right now. Please try again shortly or use the approved contact details.');
+  }
 });
 refreshTermsState();
 </script>
