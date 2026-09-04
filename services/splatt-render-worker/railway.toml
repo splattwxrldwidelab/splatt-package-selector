@@ -1,0 +1,15 @@
+[build]
+# Uses Dockerfile in this directory
+
+[deploy]
+# Restart policy: always restart on exit/crash
+restartPolicyType = "ALWAYS"
+
+# No public domain; internal only
+# networking.serviceDomains is omitted to keep this private
+
+# Health check path (optional, can be omitted if worker doesn't expose HTTP)
+# healthcheckPath = ""
+
+# Continuous worker - no specific timeout
+startCommand = "node worker.mjs"

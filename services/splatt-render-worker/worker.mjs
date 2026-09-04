@@ -1,0 +1,241 @@
+import { spawn } from 'node:child_process';
+import { createReadStream } from 'node:fs';
+import { mkdir, rm, stat } from 'node:fs/promises';
+import { Readable } from 'node:stream';
+import path from 'node:path';
+import os from 'node:os';
+import crypto from 'node:crypto';
+
+const API_URL = process.env.WORKER_API_URL;
+const TOKEN = process.env.WORKER_TOKEN;
+const WORKER_ID = process.env.WORKER_ID || `splatt-render-${os.hostname()}`;
+const POLL_MS = Number(process.env.POLL_MS || 3000);
+
+if (!API_URL || !TOKEN) throw new Error('WORKER_API_URL and WORKER_TOKEN are required');
+
+const ASSETS = {
+  noslimethemovie: new URL('./assets/overlay_noslimethemovie.png', import.meta.url).pathname,
+  saucewalka102: new URL('./assets/overlay_saucewalka102.png', import.meta.url).pathname,
+  voochiep: new URL('./assets/overlay_voochiep.png', import.meta.url).pathname,
+};
+
+const OUTRO = new URL('./assets/splatt_kick_outro.mp4', import.meta.url).pathname;
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+async function call(action, body = {}) {
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-worker-token': TOKEN,
+    },
+    body: JSON.stringify({ action, worker_id: WORKER_ID, ...body }),
+  });
+  const text = await res.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = { error: text };
+  }
+  if (!res.ok) throw new Error(`worker-api ${res.status}: ${data?.error || text}`);
+  return data;
+}
+
+function run(cmd, args, { cwd } = {}) {
+  return new Promise((resolve, reject) => {
+    const p = spawn(cmd, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    let err = '';
+    p.stderr.on('data', d => {
+      err += d.toString();
+      if (err.length > 12000) err = err.slice(-12000);
+    });
+    p.stdout.on('data', () => {});
+    p.on('error', reject);
+    p.on('close', code =>
+      code === 0
+        ? resolve()
+        : reject(new Error(`${cmd} exited ${code}: ${err.slice(-5000)}`))
+    );
+  });
+}
+
+async function probeDuration(file) {
+  return new Promise((resolve, reject) => {
+    const p = spawn('ffprobe', [
+      '-v',
+      'error',
+      '-show_entries',
+      'format=duration',
+      '-of',
+      'default=noprint_wrappers=1:nokey=1',
+      file,
+    ]);
+    let out = '',
+      err = '';
+    p.stdout.on('data', d => (out += d));
+    p.stderr.on('data', d => (err += d));
+    p.on('close', c =>
+      c === 0 ? resolve(Number(out.trim())) : reject(new Error(err))
+    );
+  });
+}
+
+async function uploadSigned(pathName, token, filePath) {
+  const direct = API_URL.replace('/functions/v1/clip-workstation-worker-api', '');
+  const url = `${direct}/storage/v1/object/upload/sign/clip-workstation-output/${encodeURI(pathName)}?token=${encodeURIComponent(token)}`;
+  const size = (await stat(filePath)).size;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'content-type': 'video/mp4',
+      'content-length': String(size),
+      'x-upsert': 'false',
+    },
+    body: Readable.toWeb(createReadStream(filePath)),
+    duplex: 'half',
+  });
+  if (!res.ok) throw new Error(`storage upload ${res.status}: ${await res.text()}`);
+  return size;
+}
+
+async function render(job, template) {
+  const overlay = ASSETS[String(job.creator_slug).toLowerCase()];
+  if (!overlay) throw new Error(`No overlay mapped for ${job.creator_slug}`);
+
+  const dur = Number(job.source_duration_seconds);
+  if (!(dur > 0 && dur <= 176))
+    throw new Error(`Invalid source duration ${dur}`);
+
+  const tmp = path.join(os.tmpdir(), `splatt-${job.id}-${crypto.randomUUID()}`);
+  await mkdir(tmp, { recursive: true });
+  const out = path.join(tmp, 'final.mp4');
+
+  const y = Number(template?.foreground_y ?? 580);
+  const ox = Number(template?.overlay_x ?? 70);
+  const oy = Number(template?.overlay_y ?? 1200);
+  const ow = Number(template?.overlay_width ?? 780);
+  const sigma = Number(template?.blur_sigma ?? 32);
+
+  const graph = [
+    `[0:v]trim=duration=${dur},setpts=PTS-STARTPTS,split=2[fg0][bg0]`,
+    `[bg0]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,gblur=sigma=${sigma},fps=30[bg]`,
+    `[fg0]scale=1080:-2:flags=lanczos,setsar=1,fps=30[fg]`,
+    `[bg][fg]overlay=(W-w)/2:${y}:shortest=1[base]`,
+    `[1:v]scale=${ow}:-2:flags=lanczos,setsar=1[brand]`,
+    `[base][brand]overlay=${ox}:${oy}:shortest=1,setsar=1[srcv]`,
+    `[0:a]atrim=duration=${dur},asetpts=PTS-STARTPTS,aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[srca]`,
+    `[2:v]scale=1080:1920:flags=lanczos,setsar=1,fps=30,setpts=PTS-STARTPTS[outv]`,
+    `[2:a]asetpts=PTS-STARTPTS,aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo[outa]`,
+    `[srcv][srca][outv][outa]concat=n=2:v=1:a=1[v][a]`,
+  ].join(';');
+
+  const args = [
+    '-hide_banner',
+    '-loglevel',
+    'warning',
+    '-i',
+    job.source_media_url || job.source_url,
+    '-loop',
+    '1',
+    '-i',
+    overlay,
+    '-i',
+    OUTRO,
+    '-filter_complex',
+    graph,
+    '-map',
+    '[v]',
+    '-map',
+    '[a]',
+    '-c:v',
+    'libx264',
+    '-preset',
+    'veryfast',
+    '-crf',
+    '20',
+    '-pix_fmt',
+    'yuv420p',
+    '-c:a',
+    'aac',
+    '-b:a',
+    '160k',
+    '-movflags',
+    '+faststart',
+    '-max_muxing_queue_size',
+    '2048',
+    '-y',
+    out,
+  ];
+
+  await run('ffmpeg', args);
+  const finalDur = await probeDuration(out);
+  if (finalDur > 180.05)
+    throw new Error(`Rendered duration ${finalDur.toFixed(2)} exceeds 3:00`);
+
+  return { tmp, out, finalDur };
+}
+
+let busy = false;
+
+async function loop() {
+  while (true) {
+    if (busy) {
+      await sleep(500);
+      continue;
+    }
+
+    try {
+      const c = await call('claim');
+      if (!c.job) {
+        await sleep(POLL_MS);
+        continue;
+      }
+
+      busy = true;
+      const job = c.job;
+      let hb = setInterval(
+        () => call('heartbeat', { job_id: job.id }).catch(() => {}),
+        30000
+      );
+      let tmp;
+
+      try {
+        const r = await render(job, c.template || {});
+        tmp = r.tmp;
+        const prep = await call('prepare_upload', { job_id: job.id });
+        const size = await uploadSigned(prep.path, prep.token, r.out);
+        await call('complete', {
+          job_id: job.id,
+          output_storage_path: prep.path,
+          output_duration_seconds: r.finalDur,
+          output_size_bytes: size,
+        });
+        console.log(
+          `complete ${job.id} ${job.creator_slug} ${r.finalDur.toFixed(2)}s`
+        );
+      } catch (e) {
+        console.error(`failed ${job.id}`, e);
+        await call(
+          'fail',
+          {
+            job_id: job.id,
+            error_message: e instanceof Error ? e.message : String(e),
+          }
+        ).catch(() => {});
+      } finally {
+        clearInterval(hb);
+        if (tmp) await rm(tmp, { recursive: true, force: true }).catch(() => {});
+        busy = false;
+      }
+    } catch (e) {
+      console.error('poll error', e);
+      await sleep(Math.max(POLL_MS, 5000));
+    }
+  }
+}
+
+loop();
