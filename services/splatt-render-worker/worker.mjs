@@ -364,6 +364,239 @@ async function validateAssets() {
   }
 }
 
+async function renderPreview(job) {
+  const dur = Number(
+    job.source_duration_seconds
+  );
+
+  if (
+    !(dur > 0 && dur <= 176)
+  ) {
+    throw new Error(
+      `Invalid source duration ${dur}`
+    );
+  }
+
+  const source =
+    job.source_media_url ||
+    job.source_url;
+
+  if (!source) {
+    throw new Error(
+      'Job has no source media URL'
+    );
+  }
+
+  const tmp = path.join(
+    os.tmpdir(),
+
+    `splatt-preview-${job.id}-${crypto.randomUUID()}`
+  );
+
+  await mkdir(tmp, {
+    recursive: true,
+  });
+
+  const out = path.join(
+    tmp,
+    'preview.mp4'
+  );
+
+  // Target 8.5 MB (8500000 bytes, hard fail at 9MB)
+  const TARGET_BYTES = 8500000;
+  const HARD_LIMIT_BYTES = 9000000;
+
+  // Adaptive settings based on duration
+  let fps, scale, audioKbps;
+
+  if (dur <= 60) {
+    // ≤60s: 480p @ ~24fps
+    fps = 24;
+    scale = '854:480';
+    audioKbps = '48';
+  } else if (dur <= 120) {
+    // 60-120s: 480p or 360p with adaptive fps
+    fps = 24;
+    scale = '854:480';
+    audioKbps = '56';
+  } else {
+    // 120-176s: 360p @ 20-24fps
+    fps = 20;
+    scale = '640:360';
+    audioKbps = '64';
+  }
+
+  // Calculate bitrate: floor((targetBytes * 8 / duration) / 1000) kbps
+  // Reserve overhead (audio + header): use (TARGET_BYTES - overhead) for video
+  // Audio overhead ≈ audioKbps * duration_seconds / 8
+  const audioOverheadBytes = (parseInt(audioKbps) * dur * 1000) / 8;
+  const videoBudgetBytes = TARGET_BYTES - audioOverheadBytes;
+  const videoBits = videoBudgetBytes * 8;
+  const videoBitrate = Math.floor(videoBits / (dur * 1000));
+
+  // Clamp to reasonable range to prevent extremes
+  const clampedVideoBitrate = Math.max(
+    200,
+    Math.min(videoBitrate, 2500)
+  );
+
+  const maxrate = clampedVideoBitrate + 200; // Add buffer for VBV
+  const bufsize = maxrate * 2; // 2-second buffer
+
+  console.log(
+    `[renderPreview] job=${job.id} dur=${dur.toFixed(2)}s fps=${fps} scale=${scale} videoBitrate=${clampedVideoBitrate}kbps audioKbps=${audioKbps}`
+  );
+
+  const args = [
+    '-hide_banner',
+    '-loglevel',
+    'warning',
+    '-threads',
+    '2',
+    '-filter_threads',
+    '2',
+    '-i',
+    source,
+    '-t',
+    String(dur),
+    '-vf',
+    `scale=${scale}:force_original_aspect_ratio=decrease,pad=${scale.split(':')[0]}:${scale.split(':')[1]}:(ow-iw)/2:(oh-ih)/2:black,fps=${fps}`,
+    '-c:v',
+    'libx264',
+    '-b:v',
+    `${clampedVideoBitrate}k`,
+    '-maxrate',
+    `${maxrate}k`,
+    '-bufsize',
+    `${bufsize}k`,
+    '-preset',
+    'ultrafast',
+    '-pix_fmt',
+    'yuv420p',
+    '-c:a',
+    'aac',
+    '-b:a',
+    `${audioKbps}k`,
+    '-movflags',
+    '+faststart',
+    '-y',
+    out,
+  ];
+
+  await run('ffmpeg', args);
+
+  const stat_ = await stat(out);
+  const fileSize = stat_.size;
+
+  if (fileSize > HARD_LIMIT_BYTES) {
+    throw new Error(
+      `Preview file ${(fileSize / 1024 / 1024).toFixed(2)}MB exceeds hard limit of 9MB`
+    );
+  }
+
+  console.log(
+    `[renderPreview] success job=${job.id} size=${(fileSize / 1024 / 1024).toFixed(2)}MB`
+  );
+
+  return {
+    tmp,
+    out,
+    size: fileSize,
+  };
+}
+
+async function processPreviewJob(job) {
+  let heartbeat;
+  let tmp;
+  let attempts = 0;
+
+  try {
+    heartbeat = setInterval(
+      () =>
+        call('heartbeat', {
+          job_id: job.id,
+        }).catch(() => {}),
+      30000
+    );
+
+    while (attempts < MAX_RETRIES) {
+      try {
+        const result = await renderPreview(job);
+        tmp = result.tmp;
+
+        const prep = await call('prepare_upload', {
+          job_id: job.id,
+        });
+
+        const size = await uploadSigned(
+          prep.path,
+          prep.token,
+          result.out
+        );
+
+        await call('preview_complete', {
+          job_id: job.id,
+          preview_storage_path: prep.path,
+          preview_size_bytes: size,
+        });
+
+        console.log(
+          `✓ preview_complete ${job.id} ${job.creator_slug} ${(size / 1024 / 1024).toFixed(2)}MB`
+        );
+
+        return;
+      } catch (e) {
+        attempts++;
+
+        const msg =
+          e instanceof Error
+            ? e.message
+            : String(e);
+
+        console.error(
+          `[preview attempt ${attempts}/${MAX_RETRIES}] job=${job.id} error: ${msg}`
+        );
+
+        if (attempts >= MAX_RETRIES) {
+          console.error(
+            `✗ preview failed ${job.id} after ${MAX_RETRIES} attempts`
+          );
+
+          await call('fail', {
+            job_id: job.id,
+            error_message:
+              `Preview render failed after ${MAX_RETRIES} attempts: ${msg}`,
+          }).catch(() => {});
+
+          return;
+        }
+
+        if (tmp) {
+          await rm(tmp, {
+            recursive: true,
+            force: true,
+          }).catch(() => {});
+
+          tmp = undefined;
+        }
+
+        await sleep(2000 * attempts);
+      }
+    }
+  } finally {
+    if (heartbeat) {
+      clearInterval(heartbeat);
+    }
+
+    if (tmp) {
+      await rm(tmp, {
+        recursive: true,
+        force: true,
+      }).catch(() => {});
+    }
+  }
+}
+
 async function render(
   job,
   template
@@ -775,6 +1008,10 @@ async function loop() {
     '✓ Creator-specific outro mapping active'
   );
 
+  console.log(
+    '✓ Discord preview pipeline active'
+  );
+
   while (true) {
     if (busy) {
       await sleep(500);
@@ -782,23 +1019,38 @@ async function loop() {
     }
 
     try {
-      const claim =
-        await call(
-          'claim'
+      // Try to claim a preview job first
+      const previewClaim = await call('preview_claim');
+
+      if (previewClaim.job) {
+        busy = true;
+        const job = previewClaim.job;
+
+        console.log(
+          `[preview_claim] ${job.id} ${job.creator_slug}`
         );
 
+        try {
+          await processPreviewJob(job);
+        } finally {
+          busy = false;
+        }
+
+        continue;
+      }
+
+      // Then claim a regular render job
+      const claim = await call('claim');
+
       if (!claim.job) {
-        await sleep(
-          POLL_MS
-        );
+        await sleep(POLL_MS);
 
         continue;
       }
 
       busy = true;
 
-      const job =
-        claim.job;
+      const job = claim.job;
 
       console.log(
         `[claim] ${job.id} ${job.creator_slug}`
@@ -842,3 +1094,4 @@ loop().catch(e => {
 
   process.exit(1);
 });
+
