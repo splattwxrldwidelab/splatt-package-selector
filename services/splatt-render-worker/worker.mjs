@@ -364,6 +364,216 @@ async function validateAssets() {
   }
 }
 
+async function renderPreview(
+  job,
+  template
+) {
+  const creator =
+    getCreatorSlug(job);
+
+  const overlay =
+    getOverlay(job);
+
+  const dur = Number(
+    job.source_duration_seconds
+  );
+
+  if (
+    !(dur > 0 && dur <= 176)
+  ) {
+    throw new Error(
+      `Invalid source duration ${dur}`
+    );
+  }
+
+  const source =
+    job.source_media_url ||
+    job.source_url;
+
+  if (!source) {
+    throw new Error(
+      'Job has no source media URL'
+    );
+  }
+
+  const tmp = path.join(
+    os.tmpdir(),
+
+    `splatt-preview-${job.id}-${crypto.randomUUID()}`
+  );
+
+  await mkdir(tmp, {
+    recursive: true,
+  });
+
+  const out = path.join(
+    tmp,
+    'preview.mp4'
+  );
+
+  const y = Number(
+    template?.foreground_y ??
+      580
+  );
+
+  const ox = Number(
+    template?.overlay_x ??
+      70
+  );
+
+  const oy = Number(
+    template?.overlay_y ??
+      1200
+  );
+
+  const ow = Number(
+    template?.overlay_width ??
+      780
+  );
+
+  const sigma = Number(
+    template?.blur_sigma ??
+      32
+  );
+
+  console.log(
+    `[preview] creator=${creator} source=${dur.toFixed(
+      2
+    )}s`
+  );
+
+  // For preview: simple filter, no outro, scale down to 640x360
+  // Same overlay + foreground composition as final, but downscaled
+  const graph = [
+    `[0:v]trim=duration=${dur},setpts=PTS-STARTPTS,split=2[fg0][bg0]`,
+
+    `[bg0]scale=360:640:force_original_aspect_ratio=increase,crop=360:640,setsar=1,gblur=sigma=${Math.max(
+      4,
+      sigma / 4
+    )},scale=640:360:flags=bilinear,fps=30[bg]`,
+
+    `[fg0]scale=640:-2:flags=lanczos,setsar=1,fps=30[fg]`,
+
+    `[bg][fg]overlay=(W-w)/2:${Math.round(y / 5.33)}:shortest=1[base]`,
+
+    `[1:v]scale=${Math.round(ow / 1.7)}:-2:flags=lanczos,setsar=1[brand]`,
+
+    `[base][brand]overlay=${Math.round(ox / 1.7)}:${Math.round(oy / 5.33)}:shortest=1,setsar=1[v]`,
+
+    `[0:a]atrim=duration=${dur},asetpts=PTS-STARTPTS[a]`,
+  ].join(';');
+
+  const args = [
+    '-hide_banner',
+
+    '-loglevel',
+    'warning',
+
+    '-threads',
+    '1',
+
+    '-filter_threads',
+    '1',
+
+    '-i',
+    source,
+
+    '-loop',
+    '1',
+
+    '-i',
+    overlay,
+
+    '-filter_complex',
+    graph,
+
+    '-map',
+    '[v]',
+
+    '-map',
+    '[a]',
+
+    '-c:v',
+    'libx264',
+
+    '-preset',
+    'superfast',
+
+    '-crf',
+    '28',
+
+    '-pix_fmt',
+    'yuv420p',
+
+    '-r',
+    '30',
+
+    '-c:a',
+    'aac',
+
+    '-b:a',
+    '96k',
+
+    '-movflags',
+    '+faststart',
+
+    '-maxrate',
+    '2000k',
+
+    '-bufsize',
+    '2500k',
+
+    '-y',
+    out,
+  ];
+
+  console.log(
+    `[preview] job=${job.id} creator=${creator} dur=${dur}s`
+  );
+
+  await run(
+    'ffmpeg',
+    args
+  );
+
+  const previewDur =
+    await probeDuration(out);
+
+  const outputStat =
+    await stat(out);
+
+  if (
+    !outputStat.size
+  ) {
+    throw new Error(
+      'Preview file is empty'
+    );
+  }
+
+  // Validate size constraint: max 9MB
+  if (outputStat.size > 9000000) {
+    throw new Error(
+      `Preview size ${(outputStat.size / 1024 / 1024).toFixed(2)}MB exceeds 9MB limit`
+    );
+  }
+
+  console.log(
+    `[preview] success job=${job.id} creator=${creator} previewDur=${previewDur.toFixed(
+      2
+    )}s size=${(
+      outputStat.size /
+      1024 /
+      1024
+    ).toFixed(2)}MB`
+  );
+
+  return {
+    tmp,
+    out,
+    previewDur,
+  };
+}
+
 async function render(
   job,
   template
@@ -614,6 +824,141 @@ async function render(
 
 let busy = false;
 
+async function processPreviewJob(
+  job,
+  template
+) {
+  let heartbeat;
+
+  let tmp;
+
+  let attempts = 0;
+
+  try {
+    heartbeat = setInterval(
+      () =>
+        call('preview_heartbeat', {
+          job_id: job.id,
+        }).catch(() => {}),
+      30000
+    );
+
+    while (
+      attempts < MAX_RETRIES
+    ) {
+      try {
+        const result =
+          await renderPreview(
+            job,
+            template || {}
+          );
+
+        tmp = result.tmp;
+
+        const prep =
+          await call(
+            'preview_prepare_upload',
+            {
+              job_id:
+                job.id,
+            }
+          );
+
+        const size =
+          await uploadSigned(
+            prep.path,
+            prep.token,
+            result.out
+          );
+
+        await call(
+          'preview_complete',
+          {
+            job_id:
+              job.id,
+
+            preview_storage_path:
+              prep.path,
+
+            preview_duration_seconds:
+              result.previewDur,
+
+            preview_size_bytes:
+              size,
+          }
+        );
+
+        console.log(
+          `✓ preview_complete ${job.id} ${job.creator_slug} ${result.previewDur.toFixed(
+            2
+          )}s ${(size / 1024 / 1024).toFixed(2)}MB`
+        );
+
+        return;
+      } catch (e) {
+        attempts++;
+
+        const msg =
+          e instanceof Error
+            ? e.message
+            : String(e);
+
+        console.error(
+          `[preview attempt ${attempts}/${MAX_RETRIES}] job=${job.id} error: ${msg}`
+        );
+
+        if (
+          attempts >=
+          MAX_RETRIES
+        ) {
+          console.error(
+            `✗ preview failed ${job.id} after ${MAX_RETRIES} attempts`
+          );
+
+          await call(
+            'preview_fail',
+            {
+              job_id:
+                job.id,
+
+              error_message:
+                `Preview failed after ${MAX_RETRIES} attempts: ${msg}`,
+            }
+          ).catch(() => {});
+
+          return;
+        }
+
+        if (tmp) {
+          await rm(tmp, {
+            recursive: true,
+            force: true,
+          }).catch(() => {});
+
+          tmp = undefined;
+        }
+
+        await sleep(
+          2000 * attempts
+        );
+      }
+    }
+  } finally {
+    if (heartbeat) {
+      clearInterval(
+        heartbeat
+      );
+    }
+
+    if (tmp) {
+      await rm(tmp, {
+        recursive: true,
+        force: true,
+      }).catch(() => {});
+    }
+  }
+}
+
 async function processJob(
   job,
   template
@@ -772,7 +1117,11 @@ async function loop() {
   );
 
   console.log(
-    '✓ Creator-specific outro mapping active'
+    '✓ Creator-specific overlay + outro mapping active'
+  );
+
+  console.log(
+    '✓ Preview pipeline enabled'
   );
 
   while (true) {
@@ -782,6 +1131,35 @@ async function loop() {
     }
 
     try {
+      // Priority: Process previews first
+      const previewClaim =
+        await call(
+          'preview_claim'
+        );
+
+      if (previewClaim.job) {
+        busy = true;
+
+        const job =
+          previewClaim.job;
+
+        console.log(
+          `[preview_claim] ${job.id} ${job.creator_slug}`
+        );
+
+        try {
+          await processPreviewJob(
+            job,
+            previewClaim.template || {}
+          );
+        } finally {
+          busy = false;
+        }
+
+        continue;
+      }
+
+      // Secondary: Process final renders
       const claim =
         await call(
           'claim'
@@ -842,3 +1220,4 @@ loop().catch(e => {
 
   process.exit(1);
 });
+
