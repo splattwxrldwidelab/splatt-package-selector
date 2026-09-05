@@ -144,7 +144,62 @@ async function validateAssets() {
   }
 }
 
-async function render(job, template) {
+async function renderPreview(job) {
+  const sourceUrl = job.source_media_url || job.source_url;
+  if (!sourceUrl) throw new Error('No source URL provided');
+
+  const tmp = path.join(os.tmpdir(), `preview-${job.id}-${crypto.randomUUID()}`);
+  await mkdir(tmp, { recursive: true });
+  const out = path.join(tmp, 'preview.mp4');
+
+  // Probe duration first
+  const dur = await probeDuration(sourceUrl);
+  if (!(dur > 0 && dur <= 176))
+    throw new Error(`Invalid source duration ${dur}`);
+
+  // Calculate dynamic bitrate to stay under 8.5 MB
+  const targetBits = 8.5 * 1024 * 1024 * 8; // bits
+  const audioBits = 64000;
+  const videoBps = Math.max(250000, Math.min(1200000, Math.floor((targetBits / dur) - audioBits)));
+
+  console.log(`[preview] job=${job.id} dur=${dur.toFixed(2)}s video_bps=${videoBps}`);
+
+  const args = [
+    '-hide_banner',
+    '-loglevel',
+    'warning',
+    '-i',
+    sourceUrl,
+    '-vf',
+    'scale=640:360:force_original_aspect_ratio=increase,crop=640:360,setsar=1,fps=30',
+    '-c:v',
+    'libx264',
+    '-b:v',
+    String(videoBps),
+    '-preset',
+    'veryfast',
+    '-pix_fmt',
+    'yuv420p',
+    '-c:a',
+    'aac',
+    '-b:a',
+    '64k',
+    '-movflags',
+    '+faststart',
+    '-y',
+    out,
+  ];
+
+  await run('ffmpeg', args);
+  const size = (await stat(out)).size;
+  if (size > 9000000)
+    throw new Error(`Preview size ${size} exceeds 9 MB limit`);
+
+  console.log(`[preview] success job=${job.id} size=${(size / 1024 / 1024).toFixed(2)}MB`);
+  return { tmp, out, size };
+}
+
+async function renderFinal(job, template) {
   const overlay = ASSETS[String(job.creator_slug).toLowerCase()];
   if (!overlay) throw new Error(`No overlay mapped for ${job.creator_slug}`);
 
@@ -162,25 +217,37 @@ async function render(job, template) {
   const ow = Number(template?.overlay_width ?? 780);
   const sigma = Number(template?.blur_sigma ?? 32);
 
-  // Optimized filter graph: reduce unnecessary resampling
+  // Optimized filter graph with low-res blurred background:
+  // 1. Scale background to 540x960, apply blur there (lower memory)
+  // 2. Upscale back to 1080x1920 before compositing
+  // 3. Composite foreground and overlays at final resolution
   const graph = [
     `[0:v]trim=duration=${dur},setpts=PTS-STARTPTS,split=2[fg0][bg0]`,
-    `[bg0]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,gblur=sigma=${sigma},fps=30[bg]`,
+    // Background: downscale for blur, apply gblur, then upscale for compositing
+    `[bg0]scale=540:960:force_original_aspect_ratio=increase,crop=540:960,setsar=1,gblur=sigma=${sigma},scale=1080:1920:flags=lanczos,setsar=1,fps=30[bg]`,
+    // Foreground: scale to final width, maintain aspect
     `[fg0]scale=1080:-2:flags=lanczos,setsar=1,fps=30[fg]`,
+    // Composite foreground over blurred background
     `[bg][fg]overlay=(W-w)/2:${y}:shortest=1[base]`,
+    // Creator overlay/brand
     `[1:v]scale=${ow}:-2:flags=lanczos,setsar=1[brand]`,
     `[base][brand]overlay=${ox}:${oy}:shortest=1,setsar=1[srcv]`,
+    // Audio: trim to source duration
     `[0:a]atrim=duration=${dur},asetpts=PTS-STARTPTS[srca]`,
+    // Outro video and audio at final resolution
     `[2:v]scale=1080:1920:flags=lanczos,setsar=1,fps=30,setpts=PTS-STARTPTS[outv]`,
     `[2:a]asetpts=PTS-STARTPTS[outa]`,
+    // Concatenate source and outro
     `[srcv][srca][outv][outa]concat=n=2:v=1:a=1[v][a]`,
   ].join(';');
 
-  // Optimized FFmpeg args: reduce buffer sizes, use faster preset
+  // FFmpeg args: veryfast preset, 2 threads, no bufsize (managed by codec)
   const args = [
     '-hide_banner',
     '-loglevel',
     'warning',
+    '-threads',
+    '2',
     '-i',
     job.source_media_url || job.source_url,
     '-loop',
@@ -191,6 +258,8 @@ async function render(job, template) {
     OUTRO,
     '-filter_complex',
     graph,
+    '-filter_threads',
+    '2',
     '-map',
     '[v]',
     '-map',
@@ -198,7 +267,7 @@ async function render(job, template) {
     '-c:v',
     'libx264',
     '-preset',
-    'fast',  // Changed from veryfast to fast for better stability
+    'veryfast',  // Fast enough, lower CPU than "fast"
     '-crf',
     '20',
     '-pix_fmt',
@@ -206,26 +275,124 @@ async function render(job, template) {
     '-c:a',
     'aac',
     '-b:a',
-    '128k',  // Reduced from 160k to lower memory footprint
+    '128k',
     '-movflags',
     '+faststart',
-    '-bufsize',
-    '1M',  // Explicit buffer size limit
     '-y',
     out,
   ];
 
-  console.log(`[render] job=${job.id} creator=${job.creator_slug} dur=${dur}s`);
+  console.log(`[final] job=${job.id} creator=${job.creator_slug} dur=${dur}s`);
   await run('ffmpeg', args);
   const finalDur = await probeDuration(out);
   if (finalDur > 180.05)
     throw new Error(`Rendered duration ${finalDur.toFixed(2)} exceeds 3:00`);
 
-  console.log(`[render] success job=${job.id} finalDur=${finalDur.toFixed(2)}s`);
+  console.log(`[final] success job=${job.id} finalDur=${finalDur.toFixed(2)}s`);
   return { tmp, out, finalDur };
 }
 
 let busy = false;
+
+async function processPreview() {
+  try {
+    const p = await call('preview_claim');
+    if (!p.job) return; // No preview job
+
+    const job = p.job;
+    let hb = setInterval(
+      () => call('preview_heartbeat', { job_id: job.id }).catch(() => {}),
+      30000
+    );
+    let tmp;
+
+    try {
+      const r = await renderPreview(job);
+      tmp = r.tmp;
+      const prep = await call('preview_prepare_upload', { job_id: job.id });
+      await uploadSigned(prep.path, prep.token, r.out);
+      await call('preview_complete', {
+        job_id: job.id,
+        preview_storage_path: prep.path,
+        preview_size_bytes: r.size,
+      });
+      console.log(`✓ preview complete ${job.id} ${(r.size / 1024 / 1024).toFixed(2)}MB`);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`✗ preview failed ${job.id}: ${msg}`);
+      await call('preview_fail', {
+        job_id: job.id,
+        error_message: msg,
+      }).catch(() => {});
+    } finally {
+      clearInterval(hb);
+      if (tmp) await rm(tmp, { recursive: true, force: true }).catch(() => {});
+    }
+  } catch (e) {
+    // Silently skip preview processing if claim fails (no preview work available)
+  }
+}
+
+async function processFinal() {
+  try {
+    const c = await call('claim');
+    if (!c.job) return false; // No final job
+
+    busy = true;
+    const job = c.job;
+    let hb = setInterval(
+      () => call('heartbeat', { job_id: job.id }).catch(() => {}),
+      30000
+    );
+    let tmp;
+    let attempts = 0;
+
+    while (attempts < MAX_RETRIES) {
+      try {
+        const r = await renderFinal(job, c.template || {});
+        tmp = r.tmp;
+        const prep = await call('prepare_upload', { job_id: job.id });
+        const size = await uploadSigned(prep.path, prep.token, r.out);
+        await call('complete', {
+          job_id: job.id,
+          output_storage_path: prep.path,
+          output_duration_seconds: r.finalDur,
+          output_size_bytes: size,
+        });
+        console.log(
+          `✓ complete ${job.id} ${job.creator_slug} ${r.finalDur.toFixed(2)}s`
+        );
+        break; // Success
+      } catch (e) {
+        attempts++;
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(`[attempt ${attempts}/${MAX_RETRIES}] job=${job.id} error: ${msg}`);
+
+        if (attempts >= MAX_RETRIES) {
+          console.error(`✗ failed ${job.id} after ${MAX_RETRIES} attempts`);
+          await call(
+            'fail',
+            {
+              job_id: job.id,
+              error_message: `Render failed after ${MAX_RETRIES} attempts: ${msg}`,
+            }
+          ).catch(() => {});
+        } else {
+          // Exponential backoff before retry
+          await sleep(2000 * attempts);
+        }
+      }
+    }
+
+    clearInterval(hb);
+    if (tmp) await rm(tmp, { recursive: true, force: true }).catch(() => {});
+    busy = false;
+    return true;
+  } catch (e) {
+    console.error('[poll]', e instanceof Error ? e.message : e);
+    return false;
+  }
+}
 
 async function loop() {
   // Validate assets on startup
@@ -242,65 +409,15 @@ async function loop() {
       continue;
     }
 
-    try {
-      const c = await call('claim');
-      if (!c.job) {
-        await sleep(POLL_MS);
-        continue;
-      }
+    // Process preview jobs first for faster Discord availability
+    await processPreview();
 
-      busy = true;
-      const job = c.job;
-      let hb = setInterval(
-        () => call('heartbeat', { job_id: job.id }).catch(() => {}),
-        30000
-      );
-      let tmp;
-      let attempts = 0;
+    // Then process final render jobs
+    const hadFinalJob = await processFinal();
 
-      while (attempts < MAX_RETRIES) {
-        try {
-          const r = await render(job, c.template || {});
-          tmp = r.tmp;
-          const prep = await call('prepare_upload', { job_id: job.id });
-          const size = await uploadSigned(prep.path, prep.token, r.out);
-          await call('complete', {
-            job_id: job.id,
-            output_storage_path: prep.path,
-            output_duration_seconds: r.finalDur,
-            output_size_bytes: size,
-          });
-          console.log(
-            `✓ complete ${job.id} ${job.creator_slug} ${r.finalDur.toFixed(2)}s`
-          );
-          break; // Success
-        } catch (e) {
-          attempts++;
-          const msg = e instanceof Error ? e.message : String(e);
-          console.error(`[attempt ${attempts}/${MAX_RETRIES}] job=${job.id} error: ${msg}`);
-
-          if (attempts >= MAX_RETRIES) {
-            console.error(`✗ failed ${job.id} after ${MAX_RETRIES} attempts`);
-            await call(
-              'fail',
-              {
-                job_id: job.id,
-                error_message: `Render failed after ${MAX_RETRIES} attempts: ${msg}`,
-              }
-            ).catch(() => {});
-          } else {
-            // Exponential backoff before retry
-            await sleep(2000 * attempts);
-          }
-        }
-      }
-
-      clearInterval(hb);
-      if (tmp) await rm(tmp, { recursive: true, force: true }).catch(() => {});
-      busy = false;
-    } catch (e) {
-      console.error('[poll]', e instanceof Error ? e.message : e);
-      await sleep(Math.max(POLL_MS, 5000));
+    // If no work, wait before polling again
+    if (!hadFinalJob) {
+      await sleep(POLL_MS);
     }
   }
 }
