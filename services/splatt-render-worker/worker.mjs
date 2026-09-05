@@ -364,6 +364,157 @@ async function validateAssets() {
   }
 }
 
+// Render Discord preview with fixed bitrate math and adaptive encoding
+async function renderPreview(
+  job,
+  template
+) {
+  const creator =
+    getCreatorSlug(job);
+
+  const dur = Number(
+    job.source_duration_seconds
+  );
+
+  if (
+    !(dur > 0 && dur <= 176)
+  ) {
+    throw new Error(
+      `Invalid source duration ${dur}`
+    );
+  }
+
+  const source =
+    job.source_media_url ||
+    job.source_url;
+
+  if (!source) {
+    throw new Error(
+      'Job has no source media URL'
+    );
+  }
+
+  const tmp = path.join(
+    os.tmpdir(),
+    `splatt-preview-${job.id}-${crypto.randomUUID()}`
+  );
+
+  await mkdir(tmp, {
+    recursive: true,
+  });
+
+  const out = path.join(
+    tmp,
+    'preview.mp4'
+  );
+
+  // Bitrate math for 8.5MB target (safe below 9MB limit)
+  const targetBytes = 8500000;
+  const audioKbps = dur <= 60 ? 48 : dur <= 120 ? 56 : 64;
+  const audioBits = audioKbps * 1000 * dur;
+  const videoBits = targetBytes * 8 - audioBits;
+  const videoKbps = Math.max(200, Math.min(2500, Math.floor(videoBits / dur / 1000)));
+
+  // Adaptive resolution/fps based on duration
+  let resolution, fps;
+  if (dur <= 60) {
+    resolution = '480:854';
+    fps = 24;
+  } else if (dur <= 120) {
+    resolution = '480:854';
+    fps = 24;
+  } else {
+    resolution = '360:640';
+    fps = 20;
+  }
+
+  console.log(
+    `[preview] job=${job.id} creator=${creator} dur=${dur.toFixed(2)}s target=${(targetBytes/1024/1024).toFixed(2)}MB audioKbps=${audioKbps} videoKbps=${videoKbps}`
+  );
+
+  const args = [
+    '-hide_banner',
+    '-loglevel',
+    'warning',
+    '-threads',
+    '2',
+    '-filter_threads',
+    '2',
+    '-i',
+    source,
+    '-filter_complex',
+    `[0:v]trim=duration=${dur},scale=${resolution}:force_original_aspect_ratio=decrease,pad=w=ceil(iw/2)*2:h=ceil(ih/2)*2,setsar=1,fps=${fps}[v]`,
+    '-map',
+    '[v]',
+    '-map',
+    '0:a',
+    '-c:v',
+    'libx264',
+    '-preset',
+    'veryfast',
+    '-crf',
+    '24',
+    '-b:v',
+    `${videoKbps}k`,
+    '-maxrate',
+    `${Math.floor(videoKbps * 1.2)}k`,
+    '-bufsize',
+    `${Math.floor(videoKbps * 2)}k`,
+    '-pix_fmt',
+    'yuv420p',
+    '-c:a',
+    'aac',
+    '-b:a',
+    `${audioKbps}k`,
+    '-movflags',
+    '+faststart',
+    '-y',
+    out,
+  ];
+
+  await run(
+    'ffmpeg',
+    args
+  );
+
+  const finalDur =
+    await probeDuration(out);
+
+  const outputStat =
+    await stat(out);
+
+  if (
+    !outputStat.size
+  ) {
+    throw new Error(
+      'Preview file is empty'
+    );
+  }
+
+  if (outputStat.size >= 9000000) {
+    throw new Error(
+      `Preview file ${(outputStat.size / 1024 / 1024).toFixed(2)}MB exceeds 9MB limit, retry needed`
+    );
+  }
+
+  console.log(
+    `[preview] success job=${job.id} creator=${creator} finalDur=${finalDur.toFixed(
+      2
+    )}s size=${(
+      outputStat.size /
+      1024 /
+      1024
+    ).toFixed(2)}MB`
+  );
+
+  return {
+    tmp,
+    out,
+    finalDur,
+    size: outputStat.size,
+  };
+}
+
 async function render(
   job,
   template
@@ -614,6 +765,134 @@ async function render(
 
 let busy = false;
 
+async function processPreviewJob(
+  job
+) {
+  let heartbeat;
+
+  let tmp;
+
+  let attempts = 0;
+
+  try {
+    heartbeat = setInterval(
+      () =>
+        call('preview_heartbeat', {
+          job_id: job.id,
+        }).catch(() => {}),
+      30000
+    );
+
+    while (
+      attempts < MAX_RETRIES
+    ) {
+      try {
+        const result =
+          await renderPreview(job);
+
+        tmp = result.tmp;
+
+        const prep =
+          await call(
+            'preview_prepare_upload',
+            {
+              job_id:
+                job.id,
+            }
+          );
+
+        const size =
+          await uploadSigned(
+            prep.path,
+            prep.token,
+            result.out
+          );
+
+        await call(
+          'preview_complete',
+          {
+            job_id:
+              job.id,
+
+            preview_storage_path:
+              prep.path,
+
+            preview_size_bytes:
+              size,
+          }
+        );
+
+        console.log(
+          `✓ preview complete ${job.id} ${job.creator_slug} ${result.finalDur.toFixed(
+            2
+          )}s ${(size / 1024 / 1024).toFixed(2)}MB`
+        );
+
+        return;
+      } catch (e) {
+        attempts++;
+
+        const msg =
+          e instanceof Error
+            ? e.message
+            : String(e);
+
+        console.error(
+          `[preview attempt ${attempts}/${MAX_RETRIES}] job=${job.id} error: ${msg}`
+        );
+
+        if (
+          attempts >=
+          MAX_RETRIES
+        ) {
+          console.error(
+            `✗ preview failed ${job.id} after ${MAX_RETRIES} attempts`
+          );
+
+          await call(
+            'preview_fail',
+            {
+              job_id:
+                job.id,
+
+              error_message:
+                `Preview failed after ${MAX_RETRIES} attempts: ${msg}`,
+            }
+          ).catch(() => {});
+
+          return;
+        }
+
+        if (tmp) {
+          await rm(tmp, {
+            recursive: true,
+            force: true,
+          }).catch(() => {});
+
+          tmp = undefined;
+        }
+
+        await sleep(
+          2000 * attempts
+        );
+      }
+    }
+  } finally {
+    if (heartbeat) {
+      clearInterval(
+        heartbeat
+      );
+    }
+
+    if (tmp) {
+      await rm(tmp, {
+        recursive: true,
+        force: true,
+      }).catch(() => {});
+    }
+  }
+}
+
 async function processJob(
   job,
   template
@@ -775,6 +1054,10 @@ async function loop() {
     '✓ Creator-specific outro mapping active'
   );
 
+  console.log(
+    '✓ Discord preview pipeline active'
+  );
+
   while (true) {
     if (busy) {
       await sleep(500);
@@ -782,6 +1065,32 @@ async function loop() {
     }
 
     try {
+      // Try preview jobs first
+      const previewClaim =
+        await call(
+          'preview_claim'
+        ).catch(() => ({}));
+
+      if (previewClaim.job) {
+        const job =
+          previewClaim.job;
+
+        console.log(
+          `[preview_claim] ${job.id} ${job.creator_slug}`
+        );
+
+        busy = true;
+
+        try {
+          await processPreviewJob(job);
+        } finally {
+          busy = false;
+        }
+
+        continue;
+      }
+
+      // Fall back to regular jobs
       const claim =
         await call(
           'claim'
@@ -842,3 +1151,4 @@ loop().catch(e => {
 
   process.exit(1);
 });
+
