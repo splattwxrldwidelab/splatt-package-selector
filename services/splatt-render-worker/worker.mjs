@@ -364,7 +364,176 @@ async function validateAssets() {
   }
 }
 
-async function render(
+/**
+ * Render a Discord-compatible preview: small full-clip MP4,
+ * max 640x360, H.264/AAC, yuv420p, faststart, target <= 9MB.
+ * Correct bitrate math: 8.5MB target (hard cap 9MB), full duration preserved.
+ * Adaptive resolution: ≤60s 480p@30fps, 60-120s 480p@24fps, >120s 360p@20fps
+ */
+async function renderPreview(job) {
+  const dur = Number(
+    job.source_duration_seconds
+  );
+
+  if (
+    !(dur > 0 && dur <= 176)
+  ) {
+    throw new Error(
+      `Invalid source duration ${dur}`
+    );
+  }
+
+  const source =
+    job.source_media_url ||
+    job.source_url;
+
+  if (!source) {
+    throw new Error(
+      'Job has no source media URL'
+    );
+  }
+
+  const tmp = path.join(
+    os.tmpdir(),
+
+    `splatt-preview-${job.id}-${crypto.randomUUID()}`
+  );
+
+  await mkdir(tmp, {
+    recursive: true,
+  });
+
+  const out = path.join(
+    tmp,
+    'preview.mp4'
+  );
+
+  // Correct bitrate math targeting 8.5MB max (hard cap 9MB)
+  // totalBits = 8500000 bytes * 8 = 68,000,000 bits
+  // Allocate 90% to video, 10% to audio
+  // videoBitrate = (68,000,000 * 0.9) / (duration * 1000)
+  // audioBitrate = (68,000,000 * 0.1) / (duration * 1000)
+  const targetBits = 8500000 * 8; // 68,000,000 bits
+  const videoBits = targetBits * 0.9;
+  const audioBits = targetBits * 0.1;
+  
+  let videoBitrate = Math.floor(videoBits / (dur * 1000));
+  let audioBitrate = Math.floor(audioBits / (dur * 1000));
+  
+  // Clamp to reasonable ranges
+  videoBitrate = Math.max(200, Math.min(2500, videoBitrate));
+  audioBitrate = Math.max(32, Math.min(128, audioBitrate));
+
+  // Adaptive encoding based on duration
+  let resolution = '640:360';
+  let fps = '30';
+  
+  if (dur <= 60) {
+    resolution = '640:480';
+    fps = '30';
+  } else if (dur <= 120) {
+    resolution = '640:480';
+    fps = '24';
+  } else {
+    resolution = '640:360';
+    fps = '20';
+  }
+
+  const args = [
+    '-hide_banner',
+
+    '-loglevel',
+    'warning',
+
+    '-threads',
+    '2',
+
+    '-filter_threads',
+    '2',
+
+    '-i',
+    source,
+
+    '-vf',
+    `scale=${resolution}:force_original_aspect_ratio=decrease,pad=${resolution}:(ow-iw)/2:(oh-ih)/2:black,fps=${fps},setsar=1`,
+
+    '-c:v',
+    'libx264',
+
+    '-preset',
+    'veryfast',
+
+    '-b:v',
+    `${videoBitrate}k`,
+
+    '-maxrate',
+    `${Math.floor(videoBitrate * 1.5)}k`,
+
+    '-bufsize',
+    `${Math.floor(videoBitrate * 2)}k`,
+
+    '-pix_fmt',
+    'yuv420p',
+
+    '-c:a',
+    'aac',
+
+    '-b:a',
+    `${audioBitrate}k`,
+
+    '-movflags',
+    '+faststart',
+
+    '-y',
+    out,
+  ];
+
+  console.log(
+    `[preview] job=${job.id} dur=${dur.toFixed(
+      2
+    )}s res=${resolution} fps=${fps} vb=${videoBitrate}k ab=${audioBitrate}k`
+  );
+
+  await run('ffmpeg', args);
+
+  const outputStat = await stat(out);
+
+  if (!outputStat.size) {
+    throw new Error(
+      'Rendered preview file is empty'
+    );
+  }
+
+  const sizeBytes = outputStat.size;
+
+  if (sizeBytes > 9000000) {
+    throw new Error(
+      `Preview size ${(sizeBytes / 1024 / 1024).toFixed(
+        2
+      )}MB exceeds 9MB limit`
+    );
+  }
+
+  console.log(
+    `[preview] success job=${job.id} size=${(
+      sizeBytes /
+      1024 /
+      1024
+    ).toFixed(2)}MB`
+  );
+
+  return {
+    tmp,
+    out,
+    sizeBytes,
+  };
+}
+
+/**
+ * Render final clip with creator overlay and outro.
+ * Preserves current behavior for all three creators.
+ */
+async function renderFinal(
   job,
   template
 ) {
@@ -614,7 +783,141 @@ async function render(
 
 let busy = false;
 
-async function processJob(
+/**
+ * Process a preview job: claim -> heartbeat every 30s ->
+ * render small Discord-compatible MP4 -> prepare upload -> sign & upload -> complete.
+ * On failure, call preview_fail with error message.
+ */
+async function processPreviewJob(job) {
+  let heartbeat;
+
+  let tmp;
+
+  let attempts = 0;
+
+  try {
+    heartbeat = setInterval(
+      () =>
+        call('preview_heartbeat', {
+          job_id: job.id,
+        }).catch(() => {}),
+      30000
+    );
+
+    while (
+      attempts < MAX_RETRIES
+    ) {
+      try {
+        const result =
+          await renderPreview(job);
+
+        tmp = result.tmp;
+
+        const prep =
+          await call(
+            'preview_prepare_upload',
+            {
+              job_id:
+                job.id,
+            }
+          );
+
+        const size =
+          await uploadSigned(
+            prep.path,
+            prep.token,
+            result.out
+          );
+
+        await call(
+          'preview_complete',
+          {
+            job_id:
+              job.id,
+
+            preview_storage_path:
+              prep.path,
+
+            preview_size_bytes:
+              size,
+          }
+        );
+
+        console.log(
+          `✓ preview complete ${job.id} ${(size / 1024 / 1024).toFixed(2)}MB`
+        );
+
+        return;
+      } catch (e) {
+        attempts++;
+
+        const msg =
+          e instanceof Error
+            ? e.message
+            : String(e);
+
+        console.error(
+          `[preview attempt ${attempts}/${MAX_RETRIES}] job=${job.id} error: ${msg}`
+        );
+
+        if (
+          attempts >=
+          MAX_RETRIES
+        ) {
+          console.error(
+            `✗ preview failed ${job.id} after ${MAX_RETRIES} attempts`
+          );
+
+          await call(
+            'preview_fail',
+            {
+              job_id:
+                job.id,
+
+              error_message:
+                `Preview failed after ${MAX_RETRIES} attempts: ${msg}`,
+            }
+          ).catch(() => {});
+
+          return;
+        }
+
+        if (tmp) {
+          await rm(tmp, {
+            recursive: true,
+            force: true,
+          }).catch(() => {});
+
+          tmp = undefined;
+        }
+
+        await sleep(
+          2000 * attempts
+        );
+      }
+    }
+  } finally {
+    if (heartbeat) {
+      clearInterval(
+        heartbeat
+      );
+    }
+
+    if (tmp) {
+      await rm(tmp, {
+        recursive: true,
+        force: true,
+      }).catch(() => {});
+    }
+  }
+}
+
+/**
+ * Process a final render job: claim -> heartbeat every 30s ->
+ * render full clip with overlay/outro -> prepare upload -> sign & upload -> complete.
+ * On failure, call fail with error message.
+ */
+async function processFinalJob(
   job,
   template
 ) {
@@ -638,7 +941,7 @@ async function processJob(
     ) {
       try {
         const result =
-          await render(
+          await renderFinal(
             job,
             template || {}
           );
@@ -775,6 +1078,10 @@ async function loop() {
     '✓ Creator-specific outro mapping active'
   );
 
+  console.log(
+    '✓ Discord preview pipeline active'
+  );
+
   while (true) {
     if (busy) {
       await sleep(500);
@@ -782,10 +1089,33 @@ async function loop() {
     }
 
     try {
-      const claim =
-        await call(
-          'claim'
+      // Try preview jobs first to drain pending backlog
+      let claim = await call(
+        'preview_claim'
+      );
+
+      if (claim.job) {
+        const job = claim.job;
+
+        console.log(
+          `[preview_claim] ${job.id}`
         );
+
+        busy = true;
+
+        try {
+          await processPreviewJob(job);
+        } finally {
+          busy = false;
+        }
+
+        continue;
+      }
+
+      // Fall back to final render jobs
+      claim = await call(
+        'claim'
+      );
 
       if (!claim.job) {
         await sleep(
@@ -797,15 +1127,14 @@ async function loop() {
 
       busy = true;
 
-      const job =
-        claim.job;
+      const job = claim.job;
 
       console.log(
         `[claim] ${job.id} ${job.creator_slug}`
       );
 
       try {
-        await processJob(
+        await processFinalJob(
           job,
           claim.template || {}
         );
@@ -842,3 +1171,4 @@ loop().catch(e => {
 
   process.exit(1);
 });
+
