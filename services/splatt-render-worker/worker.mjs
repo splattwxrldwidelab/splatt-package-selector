@@ -364,6 +364,188 @@ async function validateAssets() {
   }
 }
 
+/**
+ * Render preview clip with adaptive resolution/fps/bitrate.
+ * Target: ≤8.5MB (hard cap 9MB) for full clip duration up to 176s.
+ * 
+ * Strategy:
+ * ≤60s: 480p @ 30fps
+ * 60-120s: 480p @ 24fps (or 360p @ 30fps)
+ * >120s: 360p @ 20fps
+ * 
+ * Audio: AAC 48-64kbps
+ * Video bitrate: calculated to fit target with buffer
+ */
+async function renderPreview(job) {
+  const dur = Number(
+    job.source_duration_seconds
+  );
+
+  if (
+    !(dur > 0 && dur <= 176)
+  ) {
+    throw new Error(
+      `Invalid source duration ${dur}`
+    );
+  }
+
+  const source =
+    job.source_media_url ||
+    job.source_url;
+
+  if (!source) {
+    throw new Error(
+      'Job has no source media URL'
+    );
+  }
+
+  const tmp = path.join(
+    os.tmpdir(),
+
+    `splatt-preview-${job.id}-${crypto.randomUUID()}`
+  );
+
+  await mkdir(tmp, {
+    recursive: true,
+  });
+
+  const out = path.join(
+    tmp,
+    'preview.mp4'
+  );
+
+  // Adaptive encoding based on duration
+  let resolution = '640:360';
+  let fps = 30;
+  let audioBitrate = 56;
+
+  if (dur <= 60) {
+    // ≤60s: 480p @ 30fps
+    resolution = '854:480';
+    fps = 30;
+    audioBitrate = 64;
+  } else if (dur <= 120) {
+    // 60-120s: 480p @ 24fps
+    resolution = '854:480';
+    fps = 24;
+    audioBitrate = 56;
+  } else {
+    // >120s: 360p @ 20fps
+    resolution = '640:360';
+    fps = 20;
+    audioBitrate = 48;
+  }
+
+  // Calculate video bitrate from 8.5MB target
+  // 8500000 bytes = 8500000 * 8 bits = 68,000,000 bits
+  // Over duration in seconds, minus audio allocation
+  const targetBytes = 8500000;
+  const totalBitsAvailable = targetBytes * 8;
+  const audioTotalBits = audioBitrate * 1000 * dur;
+  const videoTotalBits = totalBitsAvailable - audioTotalBits;
+  let videoBitrate = Math.floor(videoTotalBits / (dur * 1000));
+
+  // Ensure reasonable minimums
+  videoBitrate = Math.max(200, Math.min(2500, videoBitrate));
+
+  // Add -maxrate and -bufsize for constrained bitrate
+  const maxrate = Math.floor(videoBitrate * 1.2);
+  const bufsize = Math.floor(videoBitrate * 2);
+
+  const args = [
+    '-hide_banner',
+
+    '-loglevel',
+    'warning',
+
+    '-threads',
+    '2',
+
+    '-filter_threads',
+    '2',
+
+    '-i',
+    source,
+
+    '-vf',
+    `scale=${resolution}:force_original_aspect_ratio=decrease,pad=${resolution}:(ow-iw)/2:(oh-ih)/2:black,fps=${fps},setsar=1`,
+
+    '-c:v',
+    'libx264',
+
+    '-preset',
+    'veryfast',
+
+    '-b:v',
+    `${videoBitrate}k`,
+
+    '-maxrate',
+    `${maxrate}k`,
+
+    '-bufsize',
+    `${bufsize}k`,
+
+    '-pix_fmt',
+    'yuv420p',
+
+    '-c:a',
+    'aac',
+
+    '-b:a',
+    `${audioBitrate}k`,
+
+    '-movflags',
+    '+faststart',
+
+    '-y',
+    out,
+  ];
+
+  console.log(
+    `[preview] job=${job.id} dur=${dur.toFixed(
+      2
+    )}s res=${resolution} fps=${fps} vbitrate=${videoBitrate}k abitrate=${audioBitrate}k`
+  );
+
+  await run('ffmpeg', args);
+
+  const outputStat = await stat(out);
+
+  if (!outputStat.size) {
+    throw new Error(
+      'Rendered preview file is empty'
+    );
+  }
+
+  const sizeBytes = outputStat.size;
+
+  if (sizeBytes > 9000000) {
+    throw new Error(
+      `Preview size ${(sizeBytes / 1024 / 1024).toFixed(
+        2
+      )}MB exceeds 9MB limit`
+    );
+  }
+
+  console.log(
+    `[preview] success job=${job.id} size=${(
+      sizeBytes /
+      1024 /
+      1024
+    ).toFixed(2)}MB`
+  );
+
+  return {
+    tmp,
+    out,
+    sizeBytes,
+  };
+}
+
+/**
+ * Render final clip with creator overlay and outro.
+ * Preserves current behavior for all three creators.
+ */
 async function render(
   job,
   template
@@ -614,6 +796,140 @@ async function render(
 
 let busy = false;
 
+/**
+ * Process preview job: render, upload, and report completion.
+ * Do not mark "do_not_reclaim" in local state — rely on API to stop reclaims.
+ */
+async function processPreviewJob(
+  job
+) {
+  let heartbeat;
+
+  let tmp;
+
+  let attempts = 0;
+
+  try {
+    heartbeat = setInterval(
+      () =>
+        call('preview_heartbeat', {
+          job_id: job.id,
+        }).catch(() => {}),
+      30000
+    );
+
+    while (
+      attempts < MAX_RETRIES
+    ) {
+      try {
+        const result =
+          await renderPreview(job);
+
+        tmp = result.tmp;
+
+        const prep =
+          await call(
+            'preview_prepare_upload',
+            {
+              job_id:
+                job.id,
+            }
+          );
+
+        const size =
+          await uploadSigned(
+            prep.path,
+            prep.token,
+            result.out
+          );
+
+        // FIX: Use correct field names for preview_complete
+        await call(
+          'preview_complete',
+          {
+            job_id:
+              job.id,
+
+            preview_storage_path:
+              prep.path,
+
+            preview_size_bytes:
+              size,
+          }
+        );
+
+        console.log(
+          `✓ preview complete ${job.id} ${(size / 1024 / 1024).toFixed(2)}MB`
+        );
+
+        return;
+      } catch (e) {
+        attempts++;
+
+        const msg =
+          e instanceof Error
+            ? e.message
+            : String(e);
+
+        console.error(
+          `[preview attempt ${attempts}/${MAX_RETRIES}] job=${job.id} error: ${msg}`
+        );
+
+        if (
+          attempts >=
+          MAX_RETRIES
+        ) {
+          console.error(
+            `✗ preview failed ${job.id} after ${MAX_RETRIES} attempts`
+          );
+
+          await call(
+            'preview_fail',
+            {
+              job_id:
+                job.id,
+
+              error_message:
+                `Preview failed after ${MAX_RETRIES} attempts: ${msg}`,
+            }
+          ).catch(() => {});
+
+          return;
+        }
+
+        if (tmp) {
+          await rm(tmp, {
+            recursive: true,
+            force: true,
+          }).catch(() => {});
+
+          tmp = undefined;
+        }
+
+        await sleep(
+          2000 * attempts
+        );
+      }
+    }
+  } finally {
+    if (heartbeat) {
+      clearInterval(
+        heartbeat
+      );
+    }
+
+    if (tmp) {
+      await rm(tmp, {
+        recursive: true,
+        force: true,
+      }).catch(() => {});
+    }
+  }
+}
+
+/**
+ * Process final render job: render with overlay/outro, upload, and report completion.
+ */
 async function processJob(
   job,
   template
@@ -775,6 +1091,10 @@ async function loop() {
     '✓ Creator-specific outro mapping active'
   );
 
+  console.log(
+    '✓ Discord preview pipeline active'
+  );
+
   while (true) {
     if (busy) {
       await sleep(500);
@@ -782,10 +1102,33 @@ async function loop() {
     }
 
     try {
-      const claim =
-        await call(
-          'claim'
+      // Try preview jobs first to drain pending backlog
+      let claim = await call(
+        'preview_claim'
+      );
+
+      if (claim.job) {
+        const job = claim.job;
+
+        console.log(
+          `[preview_claim] ${job.id}`
         );
+
+        busy = true;
+
+        try {
+          await processPreviewJob(job);
+        } finally {
+          busy = false;
+        }
+
+        continue;
+      }
+
+      // Fall back to final render jobs
+      claim = await call(
+        'claim'
+      );
 
       if (!claim.job) {
         await sleep(
@@ -842,3 +1185,4 @@ loop().catch(e => {
 
   process.exit(1);
 });
+
