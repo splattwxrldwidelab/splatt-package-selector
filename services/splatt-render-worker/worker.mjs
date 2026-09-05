@@ -423,15 +423,18 @@ async function renderPreview(job) {
   ); // 20k overhead margin
 
   // Adaptive resolution and fps based on duration
-  let resolution, fps;
+  let width, height, fps;
   if (dur <= 60) {
-    resolution = '480x360';
+    width = 480;
+    height = 360;
     fps = 30;
   } else if (dur <= 120) {
-    resolution = '480x360';
+    width = 480;
+    height = 360;
     fps = 24;
   } else {
-    resolution = '360x270';
+    width = 360;
+    height = 270;
     fps = 20;
   }
 
@@ -451,7 +454,7 @@ async function renderPreview(job) {
     source,
 
     '-vf',
-    `scale=${resolution}:force_original_aspect_ratio=decrease,pad=${resolution}:(ow-iw)/2:(oh-ih)/2:black,fps=${fps},setsar=1`,
+    `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:black,fps=${fps},setsar=1`,
 
     '-c:v',
     'libx264',
@@ -487,7 +490,7 @@ async function renderPreview(job) {
   console.log(
     `[preview] job=${job.id} dur=${dur.toFixed(
       2
-    )}s res=${resolution} fps=${fps} bitrate=${videoBitrate}k+${audioBitrate}k`
+    )}s res=${width}x${height} fps=${fps} bitrate=${videoBitrate}k+${audioBitrate}k`
   );
 
   await run('ffmpeg', args);
