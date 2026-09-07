@@ -53,6 +53,33 @@ const OUTROS = {
   ).pathname,
 };
 
+// Geometry measured from the final 2048x684 creator overlay PNGs.
+// barY/barHeight identify the visible black strip in the source PNG.
+// logoX identifies the left edge of the green KICK lettering.
+const OVERLAY_LAYOUT = {
+  noslimethemovie: {
+    barY: 254,
+    barHeight: 179,
+    logoX: 279,
+  },
+
+  saucewalka102: {
+    barY: 255,
+    barHeight: 184,
+    logoX: 154,
+  },
+
+  voochiep: {
+    barY: 243,
+    barHeight: 198,
+    logoX: 135,
+  },
+};
+
+const OVERLAY_SOURCE_WIDTH = 2048;
+const OVERLAY_RENDER_WIDTH = 1050;
+const OVERLAY_LOGO_LEFT = 28;
+
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -587,20 +614,42 @@ async function renderFinal(
       580
   );
 
-  const ox = Number(
-    template?.overlay_x ??
-      70
-  );
+  const layout =
+    OVERLAY_LAYOUT[creator];
 
+  if (!layout) {
+    throw new Error(
+      `No overlay layout mapped for creator ${creator || 'unknown'}`
+    );
+  }
+
+  // overlay_y now means the TOP of the visible black banner.
+  // Width/X are fixed for these final branded assets so old template values
+  // cannot reintroduce the side-gap / Instagram-control overlap problem.
   const oy = Number(
     template?.overlay_y ??
       1200
   );
 
-  const ow = Number(
-    template?.overlay_width ??
-      780
-  );
+  const ow = OVERLAY_RENDER_WIDTH;
+  const overlayScale =
+    ow / OVERLAY_SOURCE_WIDTH;
+
+  // Keep a small black safety margin before the KICK logo.
+  const ox =
+    OVERLAY_LOGO_LEFT -
+    layout.logoX * overlayScale;
+
+  // The PNGs contain transparent padding. Shift the full PNG upward so the
+  // visible black strip itself begins exactly at overlay_y.
+  const brandY =
+    oy -
+    layout.barY * overlayScale;
+
+  const barHeight =
+    Math.ceil(
+      layout.barHeight * overlayScale
+    );
 
   const sigma = Number(
     template?.blur_sigma ??
@@ -645,7 +694,11 @@ async function renderFinal(
 
     `[1:v]scale=${ow}:-2:flags=lanczos,setsar=1[brand]`,
 
-    `[base][brand]overlay=${ox}:${oy}:shortest=1,setsar=1[srcv]`,
+    // Full-width black backing strip. This intentionally continues behind
+    // Instagram's right-side controls while the URL itself stops before them.
+    `[base]drawbox=x=0:y=${oy}:w=iw:h=${barHeight}:color=black:t=fill[basebar]`,
+
+    `[basebar][brand]overlay=${ox}:${brandY}:shortest=1,setsar=1[srcv]`,
 
     `[0:a]atrim=duration=${dur},asetpts=PTS-STARTPTS[srca]`,
 
